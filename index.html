@@ -5,103 +5,54 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KhawaBuild X PRO</title>
 
-<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
-body{
-margin:0;
-font-family:Arial;
-background:#0e0e0e;
-color:white;
-}
+body{margin:0;font-family:Arial;background:#0e0e0e;color:white}
 
 /* TOPBAR */
 #topbar{
-background:#121212;
-padding:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-border-bottom:1px solid #333;
+background:#121212;padding:10px;
+display:flex;justify-content:space-between;
 }
 
-#topbar button{
-background:#1f1f1f;
-border:none;
-color:white;
-padding:8px 12px;
-border-radius:6px;
-margin:2px;
+button{
+background:#1f1f1f;color:white;border:none;
+padding:8px 12px;margin:2px;border-radius:6px;
 }
 
 /* PREVIEW */
 #preview{
-background:white;
-color:black;
-min-height:80vh;
-margin:10px;
-border-radius:10px;
-padding:10px;
+background:white;color:black;
+min-height:80vh;margin:10px;
+border-radius:10px;padding:10px;
 }
 
 /* ELEMENT */
-.element{
-border:2px dashed transparent;
-padding:10px;
-margin:8px 0;
-position:relative;
-}
+.element{border:2px dashed transparent;margin:8px;padding:10px;position:relative}
+.element.selected{border-color:#00aaff}
 
-.element.selected{
-border-color:#00aaff;
-}
-
-/* DELETE */
 .deleteBtn{
-position:absolute;
-top:-10px;
-right:-10px;
-background:red;
-color:white;
-border:none;
-border-radius:50%;
-width:22px;height:22px;
-}
-
-/* CONTAINER */
-.container{
-border:2px dashed #aaa;
-padding:10px;
-min-height:80px;
+position:absolute;top:-10px;right:-10px;
+background:red;color:white;border:none;border-radius:50%;
 }
 
 /* PANEL */
 #panel{
-position:fixed;
-bottom:0;
-width:100%;
-background:#181818;
-display:none;
-max-height:55vh;
-overflow:auto;
-padding:10px;
+position:fixed;bottom:0;width:100%;
+background:#181818;display:none;
+max-height:55vh;overflow:auto;padding:10px;
 }
 
-.panelbtn{
-width:100%;
-padding:10px;
-margin:5px 0;
-background:#333;
-color:white;
-border:none;
-}
+.panelbtn{width:100%;padding:10px;margin:5px 0;background:#333;color:white;border:none}
 
-input,select{
-width:100%;
-margin:5px 0;
-padding:6px;
+/* CONTAINER */
+.container{
+border:2px dashed #aaa;
+min-height:80px;
+padding:10px;
 }
 </style>
 </head>
@@ -112,13 +63,16 @@ padding:6px;
 <div>
 <button onclick="openAdd()">Add</button>
 <button onclick="openStyle()">Style</button>
+<button onclick="openBodyStyle()">Body</button>
+<button onclick="openLoad()">📂 Load</button>
 <button onclick="saveLocal()">💾 Local</button>
 <button onclick="saveCloud()">☁️ Cloud</button>
 </div>
 
 <div>
 <button onclick="openAddon()">⚡ Addon</button>
-<button onclick="deployGithub()">🚀 Deploy</button>
+<button onclick="downloadZIP()">📦 ZIP</button>
+<button onclick="deployHTML()">⬇️ HTML</button>
 <button onclick="logout()">Logout</button>
 </div>
 </div>
@@ -128,16 +82,9 @@ padding:6px;
 
 <script>
 
-/* LOGIN CHECK */
+/* LOGIN */
 let currentUser = localStorage.getItem("user")
-if(!currentUser){
-location.href="login.html"
-}
-
-/* GLOBAL */
-window.builder={selected:null,preview:null,panel:null}
-builder.preview=document.getElementById("preview")
-builder.panel=document.getElementById("panel")
+if(!currentUser) location.href="login.html"
 
 /* FIREBASE */
 const firebaseConfig={
@@ -149,25 +96,23 @@ projectId:"knockthem-25783"
 firebase.initializeApp(firebaseConfig)
 const db=firebase.firestore()
 
-/* LOGOUT */
-function logout(){
-localStorage.removeItem("user")
-location.href="login.html"
-}
+/* GLOBAL */
+let preview=document.getElementById("preview")
+let panel=document.getElementById("panel")
+let selected=null
 
 /* SELECT */
 function select(el){
-if(builder.selected)builder.selected.classList.remove("selected")
-builder.selected=el
+if(selected)selected.classList.remove("selected")
+selected=el
 el.classList.add("selected")
 }
 
-/* CREATE (FIX CONTAINER) */
+/* CREATE */
 function create(html){
-let target=builder.preview
-
-if(builder.selected && builder.selected.querySelector(".container")){
-target=builder.selected.querySelector(".container")
+let target=preview
+if(selected && selected.querySelector(".container")){
+target=selected.querySelector(".container")
 }
 
 let el=document.createElement("div")
@@ -187,14 +132,21 @@ el.remove()
 target.appendChild(el)
 }
 
-/* MEDIA */
+/* MEDIA BASE64 FIX */
+function fileToBase64(file, callback){
+let reader=new FileReader()
+reader.onload=()=>callback(reader.result)
+reader.readAsDataURL(file)
+}
+
 function addImage(){
 let i=document.createElement("input")
 i.type="file"
 i.accept="image/*"
 i.onchange=e=>{
-let url=URL.createObjectURL(e.target.files[0])
+fileToBase64(e.target.files[0],url=>{
 create(`<img src="${url}" style="max-width:100%">`)
+})
 }
 i.click()
 }
@@ -204,8 +156,9 @@ let i=document.createElement("input")
 i.type="file"
 i.accept="video/*"
 i.onchange=e=>{
-let url=URL.createObjectURL(e.target.files[0])
+fileToBase64(e.target.files[0],url=>{
 create(`<video src="${url}" controls></video>`)
+})
 }
 i.click()
 }
@@ -215,23 +168,24 @@ let i=document.createElement("input")
 i.type="file"
 i.accept="audio/*"
 i.onchange=e=>{
-let url=URL.createObjectURL(e.target.files[0])
+fileToBase64(e.target.files[0],url=>{
 create(`<audio src="${url}" controls></audio>`)
+})
 }
 i.click()
 }
 
-/* ADD MENU */
+/* ADD */
 function openAdd(){
-builder.panel.style.display="block"
-builder.panel.innerHTML=`
-<b>Add Element</b>
+panel.style.display="block"
+panel.innerHTML=`
+<b>Add</b>
 <button onclick="closePanel()">X</button>
 
 <button class="panelbtn" onclick="create('<h1 contenteditable>Header</h1>')">Header</button>
 <button class="panelbtn" onclick="create('<p contenteditable>Text</p>')">Text</button>
 <button class="panelbtn" onclick="create('<button>Button</button>')">Button</button>
-<button class="panelbtn" onclick="create('<div class=container>Container</div>')">Container</button>
+<button class="panelbtn" onclick="create('<div class=container></div>')">Container</button>
 
 <hr>
 
@@ -243,104 +197,128 @@ builder.panel.innerHTML=`
 
 /* STYLE */
 function openStyle(){
-if(!builder.selected){alert("Pilih element");return}
-
-builder.panel.style.display="block"
-builder.panel.innerHTML=`
+if(!selected){alert("Pilih element");return}
+panel.style.display="block"
+panel.innerHTML=`
 <b>Style</b>
 <button onclick="closePanel()">X</button>
 
-Color<input type=color oninput="builder.selected.style.color=this.value">
-Bg<input type=color oninput="builder.selected.style.background=this.value">
-
-Align
-<select onchange="builder.selected.style.textAlign=this.value">
-<option>left</option>
-<option>center</option>
-<option>right</option>
+Color<input type=color oninput="selected.style.color=this.value">
+Bg<input type=color oninput="selected.style.background=this.value">
+Align<select onchange="selected.style.textAlign=this.value">
+<option>left</option><option>center</option><option>right</option>
 </select>
-
-Size<input type=range min=10 max=60 oninput="builder.selected.style.fontSize=this.value+'px'">
 `
 }
 
-/* ADDON SYSTEM FIX */
+/* BODY STYLE */
+function openBodyStyle(){
+panel.style.display="block"
+panel.innerHTML=`
+<b>Body</b>
+<button onclick="closePanel()">X</button>
+
+Background<input type=color oninput="preview.style.background=this.value">
+Text<input type=color oninput="preview.style.color=this.value">
+`
+}
+
+/* ADDON */
 function openAddon(){
-if(!window.customAddon){
-alert("Belum ada addon aktif!")
-return
+location.href="addon.html"
 }
 
-builder.panel.style.display="block"
-
-window.customAddon.open({
-panel:builder.panel,
-selected:builder.selected,
-create:create
-})
+/* SAVE */
+function saveLocal(){
+localStorage.setItem("project_"+Date.now(),preview.innerHTML)
+alert("Saved local!")
 }
-
-/* SAVE CLOUD (LIMIT 2) */
-let lastSave=0
 
 async function saveCloud(){
+let html=preview.innerHTML
+let ref=db.collection("projects").doc(currentUser)
+let doc=await ref.get()
+let list=doc.exists?doc.data().list||[]:[]
 
-let now=Date.now()
-if(now-lastSave<2000){
-alert("Tunggu 2 detik")
-return
+if(list.length>=2){alert("Max 2");return}
+
+list.push({html})
+await ref.set({list})
+
+alert("Saved cloud!")
 }
-lastSave=now
 
-let html=builder.preview.innerHTML
+/* LOAD */
+function openLoad(){
+panel.style.display="block"
+panel.innerHTML=`<b>Load</b><button onclick="closePanel()">X</button>`
 
+/* LOCAL */
+for(let i in localStorage){
+if(i.startsWith("project_")){
+panel.innerHTML+=`<button class="panelbtn" onclick="loadLocal('${i}')">${i}</button>`
+}
+}
+
+/* CLOUD */
+loadCloudList()
+}
+
+function loadLocal(key){
+preview.innerHTML=localStorage.getItem(key)
+}
+
+async function loadCloudList(){
 let ref=db.collection("projects").doc(currentUser)
 let doc=await ref.get()
 
-let list=doc.exists?doc.data().list||[]:[]
+if(!doc.exists)return
 
-if(list.length>=2){
-alert("Max 2 project cloud")
-return
+doc.data().list.forEach((p,i)=>{
+panel.innerHTML+=`<button class="panelbtn" onclick="loadCloud(${i})">Cloud ${i}</button>`
+})
+window.cloudData=doc.data().list
 }
 
-list.push({html:html})
-await ref.set({list:list})
-
-alert("Tersimpan cloud!")
+function loadCloud(i){
+preview.innerHTML=window.cloudData[i].html
 }
 
-/* LOCAL SAVE */
-function saveLocal(){
-localStorage.setItem("project_"+Date.now(),builder.preview.innerHTML)
-alert("Tersimpan lokal!")
+/* EXPORT HTML */
+function cleanHTML(){
+let clone=preview.cloneNode(true)
+clone.querySelectorAll(".deleteBtn").forEach(e=>e.remove())
+clone.querySelectorAll(".element").forEach(e=>e.classList.remove("element","selected"))
+return clone.innerHTML
 }
 
-/* DEPLOY */
-function deployGithub(){
-let html=`<!DOCTYPE html><html><body>${builder.preview.innerHTML}</body></html>`
-let blob=new Blob([html],{type:"text/html"})
+function deployHTML(){
+let html=`<!DOCTYPE html><html><body>${cleanHTML()}</body></html>`
+let blob=new Blob([html])
 let a=document.createElement("a")
 a.href=URL.createObjectURL(blob)
 a.download="index.html"
 a.click()
-alert("Upload ke GitHub Pages!")
+}
+
+/* ZIP */
+async function downloadZIP(){
+let zip=new JSZip()
+zip.file("index.html", `<!DOCTYPE html><html><body>${cleanHTML()}</body></html>`)
+let blob=await zip.generateAsync({type:"blob"})
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="website.zip"
+a.click()
 }
 
 /* PANEL */
-function closePanel(){
-builder.panel.style.display="none"
-}
+function closePanel(){panel.style.display="none"}
 
-/* LOAD ADDON */
-let active=localStorage.getItem("activeAddon")
-if(active){
-let code=localStorage.getItem("addon_"+active)
-if(code){
-let script=document.createElement("script")
-script.textContent=code
-document.body.appendChild(script)
-}
+/* LOGOUT */
+function logout(){
+localStorage.removeItem("user")
+location.href="login.html"
 }
 
 </script>

@@ -237,38 +237,6 @@ panel.innerHTML=`
 }
 
 /* STYLE PRO */
-function openStyle(){
-
-if(!selected){alert("Pilih element!");return}
-
-panel.style.display="block"
-
-panel.innerHTML=`
-<b>Style PRO</b><button onclick="closePanel()">X</button>
-
-Color<input type=color oninput="selected.style.color=this.value">
-Background<input type=color oninput="selected.style.background=this.value">
-
-Font Size<input type=range min=10 max=100 oninput="selected.style.fontSize=this.value+'px'">
-
-Align<select onchange="selected.style.textAlign=this.value">
-<option>left</option><option>center</option><option>right</option>
-</select>
-
-Width<input type=range min=50 max=500 oninput="selected.style.width=this.value+'px'">
-Height<input type=range min=50 max=500 oninput="selected.style.height=this.value+'px'">
-
-Padding<input type=range min=0 max=50 oninput="selected.style.padding=this.value+'px'">
-Margin<input type=range min=0 max=50 oninput="selected.style.margin=this.value+'px'">
-
-Radius<input type=range min=0 max=50 oninput="selected.style.borderRadius=this.value+'px'">
-
-Border Width<input type=range min=0 max=10 oninput="selected.style.borderWidth=this.value+'px'">
-Border Color<input type=color oninput="selected.style.borderColor=this.value">
-
-<button class="panelbtn" onclick="bgImage()">Background Image</button>
-`
-}
 
 function bgImage(){
 let i=document.createElement("input")
@@ -293,7 +261,165 @@ Background<input type=color oninput="preview.style.background=this.value">
 Text<input type=color oninput="preview.style.color=this.value">
 `
 }
+function openStyle(){
 
+if(!selected){
+alert("Pilih element dulu!")
+return
+}
+
+panel.style.display="block"
+
+panel.innerHTML=`
+
+<h3>🎨 Style Editor</h3>
+<button onclick="closePanel()">✖</button>
+
+<!-- TEXT -->
+<h4>📝 Text</h4>
+
+Color<br>
+<input type="color" oninput="selected.style.color=this.value"><br>
+
+Font Size<br>
+<input type="range" min="10" max="100" id="fsRange">
+<input type="number" id="fsNum" min="10" max="100"><br>
+
+Font<br>
+<select onchange="selected.style.fontFamily=this.value">
+<option>Arial</option>
+<option>Verdana</option>
+<option>Courier New</option>
+<option>Georgia</option>
+</select><br>
+
+Align<br>
+<select onchange="selected.style.textAlign=this.value">
+<option>left</option>
+<option>center</option>
+<option>right</option>
+</select>
+
+<hr>
+
+<!-- SIZE -->
+<h4>📦 Size</h4>
+
+Width<br>
+<input type="range" min="50" max="600" id="wRange">
+<input type="number" id="wNum"><br>
+
+Height<br>
+<input type="range" min="50" max="600" id="hRange">
+<input type="number" id="hNum"><br>
+
+<hr>
+
+<!-- SPACING -->
+<h4>📏 Spacing</h4>
+
+Padding<br>
+<input type="range" min="0" max="50" id="pRange">
+<input type="number" id="pNum"><br>
+
+Margin<br>
+<input type="range" min="0" max="50" id="mRange">
+<input type="number" id="mNum"><br>
+
+<hr>
+
+<!-- BACKGROUND -->
+<h4>🎨 Background</h4>
+
+Color<br>
+<input type="color" oninput="selected.style.background=this.value"><br>
+
+<button onclick="bgImage()">🖼 Background Image</button>
+
+<hr>
+
+<!-- BORDER -->
+<h4>🧱 Border</h4>
+
+Width<br>
+<input type="range" min="0" max="10" id="bwRange">
+<input type="number" id="bwNum"><br>
+
+Color<br>
+<input type="color" id="bColor"><br>
+
+Style<br>
+<select id="bStyle">
+<option>solid</option>
+<option>dashed</option>
+<option>dotted</option>
+</select>
+
+<hr>
+
+<!-- SHADOW -->
+<h4>🌫 Shadow</h4>
+
+X<input type="range" min="-50" max="50" id="sx">
+Y<input type="range" min="-50" max="50" id="sy">
+Blur<input type="range" min="0" max="50" id="sb">
+Color<input type="color" id="sc">
+
+`
+/* ===== SYNC SYSTEM ===== */
+
+function bind(rangeId, numId, callback){
+let r=document.getElementById(rangeId)
+let n=document.getElementById(numId)
+
+r.oninput=()=>{
+n.value=r.value
+callback(r.value)
+}
+
+n.oninput=()=>{
+r.value=n.value
+callback(n.value)
+}
+}
+
+/* SIZE */
+bind("wRange","wNum",v=>selected.style.width=v+"px")
+bind("hRange","hNum",v=>selected.style.height=v+"px")
+
+/* TEXT */
+bind("fsRange","fsNum",v=>selected.style.fontSize=v+"px")
+
+/* SPACING */
+bind("pRange","pNum",v=>selected.style.padding=v+"px")
+bind("mRange","mNum",v=>selected.style.margin=v+"px")
+
+/* BORDER */
+bind("bwRange","bwNum",v=>selected.style.borderWidth=v+"px")
+
+document.getElementById("bColor").oninput=e=>{
+selected.style.borderColor=e.target.value
+}
+
+document.getElementById("bStyle").onchange=e=>{
+selected.style.borderStyle=e.target.value
+}
+
+/* SHADOW */
+function updateShadow(){
+let x=document.getElementById("sx").value
+let y=document.getElementById("sy").value
+let b=document.getElementById("sb").value
+let c=document.getElementById("sc").value
+
+selected.style.boxShadow=`${x}px ${y}px ${b}px ${c}`
+}
+
+["sx","sy","sb","sc"].forEach(id=>{
+document.getElementById(id).oninput=updateShadow
+})
+
+  }
 /* ADDON */
 function openAddon(){
 location.href="addon.html"

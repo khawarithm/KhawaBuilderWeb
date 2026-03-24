@@ -3,26 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KhawaBuild X Stable</title>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<title>KhawaBuild X Clean</title>
 
 <style>
 body{margin:0;font-family:Arial;background:#0e0e0e;color:white}
 
-/* TOPBAR */
 #topbar{
 display:flex;justify-content:space-between;
 padding:10px;background:#121212;border-bottom:1px solid #333
 }
 
-.group button{
+button{
 background:#1f1f1f;color:white;border:none;
 padding:8px;margin:2px;border-radius:6px
 }
 
-/* PREVIEW */
 #preview{
 background:white;color:black;
 min-height:80vh;margin:10px;
@@ -30,40 +25,28 @@ border-radius:10px;padding:10px;
 position:relative;
 }
 
-/* ELEMENT */
 .element{
 border:2px dashed transparent;
-margin:8px;
-padding:10px;
+margin:8px;padding:10px;
 position:relative;
 }
 .element.selected{border-color:#00aaff}
 
-/* INNER */
-.inner{pointer-events:auto}
-
-/* DELETE */
 .deleteBtn{
 position:absolute;top:-10px;right:-10px;
 background:red;color:white;border:none;
 border-radius:50%;width:20px;height:20px
 }
 
-/* DRAG */
 .dragBtn{
-position:absolute;
-top:-10px;
-left:-10px;
-background:#00aaff;
-color:white;
-border:none;
-border-radius:4px;
-cursor:grab;
-padding:2px 5px;
-font-size:12px;
+position:absolute;top:-10px;left:-10px;
+background:#00aaff;color:white;
+border:none;border-radius:4px;
+cursor:grab;font-size:12px
 }
 
-/* PANEL */
+.inner{pointer-events:auto}
+
 #panel{
 position:fixed;bottom:0;width:100%;
 background:#181818;display:none;
@@ -75,11 +58,9 @@ width:100%;padding:10px;margin:5px 0;
 background:#333;color:white;border:none;border-radius:6px
 }
 
-/* CONTAINER */
 .container{
 border:2px dashed #aaa;
-min-height:80px;
-padding:10px;
+min-height:80px;padding:10px
 }
 </style>
 </head>
@@ -87,20 +68,14 @@ padding:10px;
 <body>
 
 <div id="topbar">
-<div class="group">
+<div>
 <button onclick="openAdd()">Add</button>
 <button onclick="openStyle()">Style</button>
-<button onclick="openBody()">Body</button>
-<button onclick="openLoad()">Load</button>
-<button onclick="saveCloud()">Save</button>
-</div>
-
-<div class="group">
-<button onclick="openAddon()">Marketplace</button>
 <button onclick="runAddon()">Run Addon</button>
+<button onclick="exportHTML()">Export</button>
+</div>
+<div>
 <button onclick="manageAddon()">Addon</button>
-<button onclick="exportFullHTML()">HTML</button>
-<button onclick="logout()">Logout</button>
 </div>
 </div>
 
@@ -108,19 +83,6 @@ padding:10px;
 <div id="panel"></div>
 
 <script>
-
-/* USER */
-let user = localStorage.getItem("user")
-if(!user) location.href="login.html"
-
-/* FIREBASE */
-const firebaseConfig={
-apiKey:"AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
-authDomain:"knockthem-25783.firebaseapp.com",
-projectId:"knockthem-25783"
-}
-firebase.initializeApp(firebaseConfig)
-const db=firebase.firestore()
 
 let preview=document.getElementById("preview")
 let panel=document.getElementById("panel")
@@ -131,6 +93,11 @@ function select(el){
 if(selected)selected.classList.remove("selected")
 selected=el
 el.classList.add("selected")
+}
+
+/* SAFE HTML */
+function safeHTML(html){
+return html.replace(/<script.*?>.*?<\/script>/gi,"")
 }
 
 /* CREATE */
@@ -147,15 +114,16 @@ el.className="element"
 el.innerHTML=`
 <button class="deleteBtn">x</button>
 <div class="dragBtn">☰</div>
-<div class="inner">${html}</div>
+<div class="inner">${safeHTML(html)}</div>
 `
 
-/* SELECT */
-el.onclick=e=>{
-if(e.target.closest(".inner")) return
-e.stopPropagation()
+let inner=el.querySelector(".inner")
+
+/* SELECT (AMAN) */
+el.addEventListener("click",function(e){
+if(e.target!==el && !e.target.classList.contains("dragBtn")) return
 select(el)
-}
+})
 
 /* DELETE */
 el.querySelector(".deleteBtn").onclick=e=>{
@@ -197,16 +165,13 @@ document.onmouseup=null
 target.appendChild(el)
 }
 
-/* HELPER */
-function getReal(el){
-return el.querySelector(".inner") || el
-}
-
 /* ADD */
 function openAdd(){
 panel.style.display="block"
 panel.innerHTML=`
-<b>Add</b><button onclick="closePanel()">X</button>
+<b>Add</b>
+<button onclick="closePanel()">X</button>
+
 <button class="panelbtn" onclick="create('<h1 contenteditable>Header</h1>')">Header</button>
 <button class="panelbtn" onclick="create('<p contenteditable>Text</p>')">Text</button>
 <button class="panelbtn" onclick="create('<button>Button</button>')">Button</button>
@@ -216,77 +181,44 @@ panel.innerHTML=`
 
 /* STYLE */
 function openStyle(){
-if(!selected){alert("Pilih element");return}
-let real=getReal(selected)
+if(!selected){alert("Pilih dulu");return}
+
+let real=selected.querySelector(".inner").firstElementChild
 
 panel.style.display="block"
 panel.innerHTML=`
-<b>Style</b><button onclick="closePanel()">X</button>
+<b>Style</b>
+<button onclick="closePanel()">X</button>
+
 Color<input type=color oninput="real.style.color=this.value">
 Bg<input type=color oninput="real.style.background=this.value">
 Font<input type=range min=10 max=60 oninput="real.style.fontSize=this.value+'px'">
-Width<input type=range min=50 max=500 oninput="real.style.width=this.value+'px'">
-Height<input type=range min=50 max=500 oninput="real.style.height=this.value+'px'">
 `
 }
 
-/* BODY */
-function openBody(){
-panel.style.display="block"
-panel.innerHTML=`
-<b>Body</b><button onclick="closePanel()">X</button>
-Bg<input type=color oninput="preview.style.background=this.value">
-Text<input type=color oninput="preview.style.color=this.value">
-`
-}
-
-/* CLOUD */
-async function saveCloud(){
-let ref=db.collection("projects").doc(user)
-let doc=await ref.get()
-let list=doc.exists?doc.data().list||[]:[]
-if(list.length>=2){alert("Max 2");return}
-list.push({html:preview.innerHTML})
-await ref.set({list})
-alert("Saved")
-}
-
-async function openLoad(){
-panel.style.display="block"
-panel.innerHTML="<b>Load</b><button onclick='closePanel()'>X</button>"
-let doc=await db.collection("projects").doc(user).get()
-if(!doc.exists)return
-window.cloudData=doc.data().list||[]
-cloudData.forEach((p,i)=>{
-panel.innerHTML+=`<button class="panelbtn" onclick="loadProject(${i})">Project ${i+1}</button>`
-})
-}
-
-function loadProject(i){
-preview.innerHTML=window.cloudData[i].html
-}
-
-/* ADDON */
+/* ADDON LOAD */
 function loadAddon(){
 let id=localStorage.getItem("activeAddon")
-if(!id)return
 let code=localStorage.getItem("addon_"+id)
-if(!code)return
+if(code){
 try{eval(code)}catch(e){console.log(e)}
+}
 }
 loadAddon()
 
 function runAddon(){
-if(!window.customAddon){alert("Addon tidak aktif");return}
+if(!window.customAddon){
+alert("Addon belum aktif")
+return
+}
+
 window.customAddon.open({
 panel:panel,
-selected:selected,
-preview:preview,
-create:create
+selected:selected
 })
 }
 
-/* MANAGER */
+/* ADDON MANAGER */
 function manageAddon(){
 panel.style.display="block"
 panel.innerHTML="<b>Addon</b><button onclick='closePanel()'>X</button>"
@@ -303,19 +235,11 @@ panel.innerHTML+=`
 
 function deleteAddon(id){
 localStorage.removeItem("addon_"+id)
-if(localStorage.getItem("activeAddon")==id){
-localStorage.removeItem("activeAddon")
-}
-alert("Addon dihapus")
-}
-
-/* MARKET */
-function openAddon(){
-location.href="addon.html"
+alert("Deleted")
 }
 
 /* EXPORT */
-function exportFullHTML(){
+function exportHTML(){
 
 let clone=preview.cloneNode(true)
 
@@ -326,17 +250,11 @@ let real=w.querySelector(".inner")
 if(real) w.replaceWith(real)
 })
 
-let addonID=localStorage.getItem("activeAddon")
-let addonCode=localStorage.getItem("addon_"+addonID)||""
-
 let html=`
 <!DOCTYPE html>
 <html>
 <body>
 ${clone.innerHTML}
-<script>
-${addonCode}
-</script>
 </body>
 </html>
 `
@@ -349,12 +267,8 @@ a.click()
 }
 
 /* PANEL */
-function closePanel(){panel.style.display="none"}
-
-/* LOGOUT */
-function logout(){
-localStorage.removeItem("user")
-location.href="login.html"
+function closePanel(){
+panel.style.display="none"
 }
 
 </script>

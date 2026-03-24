@@ -7,44 +7,51 @@
 
 <!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#0e0e0e;color:white}
-
-/* START */
-#startMenu{
-position:fixed;top:0;left:0;width:100%;height:100%;
-display:flex;flex-direction:column;justify-content:center;align-items:center;
-gap:20px;background:#111;z-index:999;
-}
-
-.startBtn{
-padding:14px 20px;background:#00aaff;border:none;color:white;border-radius:6px;
+body{
+margin:0;
+font-family:Arial;
+background:#0e0e0e;
+color:white;
 }
 
 /* TOPBAR */
 #topbar{
-background:#121212;padding:10px;
-display:flex;justify-content:space-between;align-items:center;
+background:#121212;
+padding:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
 border-bottom:1px solid #333;
 }
 
 #topbar button{
-background:#1f1f1f;border:none;color:white;
-padding:8px 12px;border-radius:6px;margin:2px;
+background:#1f1f1f;
+border:none;
+color:white;
+padding:8px 12px;
+border-radius:6px;
+margin:2px;
 }
 
 /* PREVIEW */
 #preview{
-background:white;color:black;
-min-height:80vh;margin:10px;border-radius:10px;padding:10px;
+background:white;
+color:black;
+min-height:80vh;
+margin:10px;
+border-radius:10px;
+padding:10px;
 }
 
 /* ELEMENT */
 .element{
-border:2px dashed transparent;padding:10px;margin:8px 0;position:relative;
+border:2px dashed transparent;
+padding:10px;
+margin:8px 0;
+position:relative;
 }
 
 .element.selected{
@@ -53,41 +60,53 @@ border-color:#00aaff;
 
 /* DELETE */
 .deleteBtn{
-position:absolute;top:-10px;right:-10px;
-background:red;color:white;border:none;border-radius:50%;
+position:absolute;
+top:-10px;
+right:-10px;
+background:red;
+color:white;
+border:none;
+border-radius:50%;
 width:22px;height:22px;
 }
 
 /* CONTAINER */
 .container{
-border:2px dashed #aaa;padding:10px;min-height:80px;
+border:2px dashed #aaa;
+padding:10px;
+min-height:80px;
 }
 
 /* PANEL */
 #panel{
-position:fixed;bottom:0;width:100%;
-background:#181818;display:none;max-height:55vh;
-overflow:auto;padding:10px;
+position:fixed;
+bottom:0;
+width:100%;
+background:#181818;
+display:none;
+max-height:55vh;
+overflow:auto;
+padding:10px;
 }
 
 .panelbtn{
-width:100%;padding:10px;margin:5px 0;
-background:#333;color:white;border:none;
+width:100%;
+padding:10px;
+margin:5px 0;
+background:#333;
+color:white;
+border:none;
 }
 
 input,select{
-width:100%;margin:5px 0;padding:6px;
+width:100%;
+margin:5px 0;
+padding:6px;
 }
 </style>
 </head>
 
 <body>
-
-<div id="startMenu">
-<h2>KhawaBuild X</h2>
-<button class="startBtn" onclick="login()">Login Google</button>
-<button class="startBtn" onclick="start()">Masuk Editor</button>
-</div>
 
 <div id="topbar">
 <div>
@@ -100,6 +119,7 @@ width:100%;margin:5px 0;padding:6px;
 <div>
 <button onclick="openAddon()">⚡ Addon</button>
 <button onclick="deployGithub()">🚀 Deploy</button>
+<button onclick="logout()">Logout</button>
 </div>
 </div>
 
@@ -107,6 +127,12 @@ width:100%;margin:5px 0;padding:6px;
 <div id="panel"></div>
 
 <script>
+
+/* LOGIN CHECK */
+let currentUser = localStorage.getItem("user")
+if(!currentUser){
+location.href="login.html"
+}
 
 /* GLOBAL */
 window.builder={selected:null,preview:null,panel:null}
@@ -117,32 +143,16 @@ builder.panel=document.getElementById("panel")
 const firebaseConfig={
 apiKey:"AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
 authDomain:"knockthem-25783.firebaseapp.com",
-projectId:"knockthem-25783",
-storageBucket:"knockthem-25783.firebasestorage.app",
-messagingSenderId:"620826019120",
-appId:"1:620826019120:web:7a0990878cc55e3a1bf4f5"
+projectId:"knockthem-25783"
 };
 
 firebase.initializeApp(firebaseConfig)
-const auth=firebase.auth()
 const db=firebase.firestore()
 
-/* LOGIN */
-function login(){
-let provider=new firebase.auth.GoogleAuthProvider()
-auth.signInWithPopup(provider)
-.then(()=>alert("Login sukses!"))
-.catch(e=>alert(e.message))
-}
-
-auth.onAuthStateChanged(user=>{
-if(user){
-console.log("Login:",user.displayName)
-}
-})
-
-function start(){
-document.getElementById("startMenu").style.display="none"
+/* LOGOUT */
+function logout(){
+localStorage.removeItem("user")
+location.href="login.html"
 }
 
 /* SELECT */
@@ -152,7 +162,7 @@ builder.selected=el
 el.classList.add("selected")
 }
 
-/* CREATE */
+/* CREATE (FIX CONTAINER) */
 function create(html){
 let target=builder.preview
 
@@ -254,10 +264,10 @@ Size<input type=range min=10 max=60 oninput="builder.selected.style.fontSize=thi
 `
 }
 
-/* ADDON */
+/* ADDON SYSTEM FIX */
 function openAddon(){
 if(!window.customAddon){
-alert("Belum ada addon!")
+alert("Belum ada addon aktif!")
 return
 }
 
@@ -270,21 +280,23 @@ create:create
 })
 }
 
-/* SAVE */
+/* SAVE CLOUD (LIMIT 2) */
 let lastSave=0
 
 async function saveCloud(){
-let user=auth.currentUser
-if(!user){alert("Login dulu");return}
 
 let now=Date.now()
-if(now-lastSave<2000){alert("Tunggu!");return}
+if(now-lastSave<2000){
+alert("Tunggu 2 detik")
+return
+}
 lastSave=now
 
 let html=builder.preview.innerHTML
 
-let ref=db.collection("projects").doc(user.uid)
+let ref=db.collection("projects").doc(currentUser)
 let doc=await ref.get()
+
 let list=doc.exists?doc.data().list||[]:[]
 
 if(list.length>=2){
@@ -298,6 +310,7 @@ await ref.set({list:list})
 alert("Tersimpan cloud!")
 }
 
+/* LOCAL SAVE */
 function saveLocal(){
 localStorage.setItem("project_"+Date.now(),builder.preview.innerHTML)
 alert("Tersimpan lokal!")

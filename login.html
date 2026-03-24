@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login</title>
+<style>
+body{font-family:Arial;background:#111;color:white;text-align:center}
+input{display:block;margin:10px auto;padding:10px;width:200px}
+button{padding:10px 20px}
+a{color:#00aaff;cursor:pointer}
+</style>
+</head>
+
+<body>
+
+<h2>Login</h2>
+
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<p><a href="register.html">Belum punya akun?</a></p>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig={
+apiKey:"AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
+authDomain:"knockthem-25783.firebaseapp.com",
+projectId:"knockthem-25783"
+};
+
+firebase.initializeApp(firebaseConfig)
+const db=firebase.firestore()
+
+async function login(){
+
+let u=document.getElementById("user").value
+let p=document.getElementById("pass").value
+
+let doc=await db.collection("users").doc(u).get()
+
+if(!doc.exists){
+alert("User tidak ditemukan")
+return
+}
+
+if(doc.data().password===p){
+localStorage.setItem("user",u)
+location.href="index.html"
+}else{
+alert("Password salah")
+}
+
+}
+</script>
+
+</body>
+</html>

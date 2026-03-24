@@ -3,122 +3,195 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Add-on Store</title>
+<title>Addon Marketplace</title>
 
 <style>
 body{
 margin:0;
 font-family:Arial;
-background:#0f0f0f;
+background:#0e0e0e;
 color:white;
-text-align:center;
-padding:20px;
 }
 
-.card{
-background:#1c1c1c;
+/* HEADER */
+#header{
 padding:15px;
-margin:10px;
-border-radius:10px;
+background:#121212;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #333;
 }
 
-button{
-padding:10px 15px;
-margin:5px;
+#header button{
+background:#00aaff;
+border:none;
+padding:8px 12px;
+border-radius:6px;
+color:white;
+}
+
+/* GRID */
+#grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+gap:15px;
+padding:15px;
+}
+
+/* CARD */
+.card{
+background:#1a1a1a;
+border-radius:10px;
+padding:10px;
+box-shadow:0 0 10px rgba(0,0,0,0.5);
+}
+
+.card h3{
+margin:5px 0;
+}
+
+.card p{
+font-size:12px;
+color:#aaa;
+}
+
+/* BUTTON */
+.card button{
+width:100%;
+padding:6px;
+margin-top:5px;
 border:none;
 border-radius:6px;
-background:#00aaff;
+background:#333;
 color:white;
 }
 
-.empty{
+.vip{
+background:#ff9800 !important;
+}
+
+/* EMPTY */
+#empty{
+text-align:center;
 margin-top:50px;
+color:#777;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Add-on Store</h2>
+<div id="header">
+<b>Addon Marketplace</b>
+<button onclick="goBack()">⬅ Kembali</button>
+</div>
 
-<div id="addonList"></div>
+<div id="grid"></div>
 
-<div class="empty" id="empty">
+<div id="empty" style="display:none">
 <p>Belum memiliki add-on :(</p>
-<button onclick="downloadAddon()">Unduh Add-on</button>
+<button onclick="goYT()">Unduh Add-on</button>
 </div>
 
 <script>
 
-let addons = JSON.parse(localStorage.getItem("addons") || "[]")
+/* DATA ADDON */
+let addons = [
+{name:"JS",desc:"Basic interaction",vip:false},
+{name:"HTML+",desc:"UI Elements",vip:false},
+{name:"Style+",desc:"Advanced styling",vip:false},
+{name:"JS+",desc:"Pro scripting",vip:true}
+]
+
+let grid = document.getElementById("grid")
 
 function render(){
 
-let list=document.getElementById("addonList")
-let empty=document.getElementById("empty")
-
-list.innerHTML=""
-
-if(addons.length==0){
-empty.style.display="block"
-}else{
-empty.style.display="none"
+grid.innerHTML=""
 
 addons.forEach(a=>{
-list.innerHTML+=`
-<div class="card">
-<b>${a}</b><br>
-<button onclick="useAddon('${a}')">Gunakan</button>
-</div>
+
+let div=document.createElement("div")
+div.className="card"
+
+div.innerHTML=`
+<h3>${a.name}</h3>
+<p>${a.desc}</p>
+
+<button onclick="install('${a.name}')">Install</button>
+<button onclick="useAddon('${a.name}')">Gunakan</button>
+
+${a.vip ? '<button class="vip" onclick="unlockVIP()">Unlock VIP</button>' : ''}
 `
+
+grid.appendChild(div)
+
 })
-}
 
 }
 
-function downloadAddon(){
-window.open("https://youtube.com/@Khawarithm")
-}
+/* INSTALL */
+function install(name){
 
-/* INSTALL ADDON */
-function install(){
+let input=document.createElement("input")
+input.type="file"
+input.accept=".js"
 
-let i=document.createElement("input")
-i.type="file"
-i.accept=".js"
-
-i.onchange=e=>{
-
+input.onchange=e=>{
 let file=e.target.files[0]
 
-addons.push(file.name)
-localStorage.setItem("addons",JSON.stringify(addons))
-
 let reader=new FileReader()
-
 reader.onload=function(){
-localStorage.setItem("addon_"+file.name,reader.result)
-alert("Addon terinstall!")
-render()
-}
 
+localStorage.setItem("addon_"+name, reader.result)
+alert(name+" terinstall!")
+
+}
 reader.readAsText(file)
-
 }
 
-i.click()
+input.click()
 }
 
 /* USE */
 function useAddon(name){
-localStorage.setItem("activeAddon",name)
-alert("Addon aktif! balik ke editor")
+
+/* CEK VIP */
+let isVIP = localStorage.getItem("vip")
+
+let data = addons.find(a=>a.name===name)
+
+if(data.vip && !isVIP){
+alert("Addon ini VIP! Unlock dulu!")
+return
 }
 
-/* BUTTON INSTALL */
-document.body.innerHTML += `
-<button onclick="install()">Install Add-on</button>
-`
+localStorage.setItem("activeAddon", name)
+
+alert(name+" digunakan!")
+}
+
+/* VIP */
+function unlockVIP(){
+
+alert("Tonton iklan 5 detik...")
+
+setTimeout(()=>{
+localStorage.setItem("vip","true")
+alert("VIP terbuka!")
+},5000)
+
+}
+
+/* NAV */
+function goBack(){
+location.href="index.html"
+}
+
+function goYT(){
+window.open("https://youtube.com/@Khawarithm")
+}
 
 render()
 

@@ -12,21 +12,29 @@
 body{
 margin:0;
 font-family:Arial;
-background:#0e0e0e;
+background:#0f0f0f;
 color:white;
 }
 
 /* HEADER */
-#header{
-padding:15px;
-background:#121212;
+header{
 display:flex;
 justify-content:space-between;
 align-items:center;
+padding:15px;
+background:#141414;
 border-bottom:1px solid #333;
 }
 
-#header input{
+header input{
+padding:6px;
+border-radius:6px;
+border:none;
+}
+
+/* FILTER */
+#filter{
+margin-left:10px;
 padding:6px;
 border-radius:6px;
 border:none;
@@ -35,92 +43,164 @@ border:none;
 /* GRID */
 #grid{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
 gap:15px;
-padding:15px;
+padding:20px;
 }
 
 /* CARD */
 .card{
-background:#1a1a1a;
+background:#1b1b1b;
+padding:15px;
 border-radius:12px;
-padding:12px;
-box-shadow:0 0 10px rgba(0,0,0,0.5);
+box-shadow:0 0 15px rgba(0,0,0,0.4);
 }
 
-.card h3{margin:5px 0}
-.card small{color:#aaa}
+.card h3{
+margin:5px 0;
+}
+
+.card small{
+color:#aaa;
+}
 
 .card button{
 width:100%;
-margin-top:5px;
+margin-top:8px;
 padding:8px;
 border:none;
 border-radius:6px;
-background:#333;
+cursor:pointer;
+}
+
+.install{background:#333}
+.installed{background:#4caf50}
+.active{background:#00aaff}
+.vip{background:#ff9800}
+
+/* UPLOAD MODAL */
+#uploadBox{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.7);
+display:none;
+align-items:center;
+justify-content:center;
+}
+
+#uploadPanel{
+background:#1b1b1b;
+padding:20px;
+border-radius:10px;
+width:320px;
+}
+
+#uploadPanel input,
+#uploadPanel select{
+width:100%;
+padding:8px;
+margin-bottom:10px;
+border:none;
+border-radius:6px;
+}
+
+#uploadPanel button{
+width:100%;
+padding:10px;
+border:none;
+border-radius:6px;
+background:#00aaff;
 color:white;
 }
 
-.vip{background:#ff9800}
-.active{background:#00aaff}
-.installed{background:#4caf50}
-
-/* EMPTY */
-#empty{
+.empty{
 text-align:center;
-margin-top:50px;
 color:#777;
+margin-top:40px;
 }
 </style>
 </head>
 
 <body>
 
-<div id="header">
+<header>
+<div>
 <b>Addon Marketplace</b>
+</div>
 
 <div>
-<input id="search" placeholder="Search..." oninput="render()">
-<button onclick="openUpload()">➕</button>
-<button onclick="back()">⬅</button>
+<input id="search" placeholder="Search addon..." oninput="render()">
+<select id="filter" onchange="render()">
+<option value="">All</option>
+<option value="JS">JS</option>
+<option value="HTML">HTML</option>
+<option value="CSS">CSS</option>
+</select>
+<button onclick="openUpload()">Upload</button>
+<button onclick="back()">Back</button>
 </div>
-</div>
+</header>
 
 <div id="grid"></div>
+<div id="empty" class="empty" style="display:none">Belum ada addon</div>
 
-<div id="empty" style="display:none">
-<p>Belum ada addon 😢</p>
+<!-- Upload -->
+<div id="uploadBox">
+<div id="uploadPanel">
+
+<h3>Upload Addon</h3>
+
+<input id="aName" placeholder="Nama addon">
+
+<select id="aCat">
+<option>JS</option>
+<option>HTML</option>
+<option>CSS</option>
+</select>
+
+<select id="aVIP">
+<option value="false">Free</option>
+<option value="true">VIP</option>
+</select>
+
+<input type="file" id="aFile" accept=".js">
+
+<button onclick="uploadAddon()">Upload</button>
+<button onclick="closeUpload()">Cancel</button>
+
+</div>
 </div>
 
 <script>
 
-/* LOGIN CHECK */
+/* USER */
 let user = localStorage.getItem("user")
 if(!user) location.href="login.html"
 
 /* FIREBASE */
-const firebaseConfig={
-apiKey:"AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
-authDomain:"knockthem-25783.firebaseapp.com",
-projectId:"knockthem-25783"
-};
+const firebaseConfig = {
+apiKey: "AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
+authDomain: "knockthem-25783.firebaseapp.com",
+projectId: "knockthem-25783"
+}
 
 firebase.initializeApp(firebaseConfig)
-const db=firebase.firestore()
+const db = firebase.firestore()
 
 let addons=[]
 
-/* LOAD */
+/* LOAD ADDONS */
 async function loadAddons(){
-
-let snap=await db.collection("addons").get()
+let snap = await db.collection("addons").get()
 
 addons=[]
-
 snap.forEach(doc=>{
-let d=doc.data()
-d.id=doc.id
-addons.push(d)
+let data=doc.data()
+data.id=doc.id
+addons.push(data)
 })
 
 render()
@@ -130,13 +210,17 @@ render()
 function render(){
 
 let q=document.getElementById("search").value.toLowerCase()
-let grid=document.getElementById("grid")
+let f=document.getElementById("filter").value
 
+let grid=document.getElementById("grid")
 grid.innerHTML=""
 
-let filtered=addons.filter(a=>a.name.toLowerCase().includes(q))
+let filtered = addons.filter(a=>{
+return a.name.toLowerCase().includes(q) &&
+(!f || a.category===f)
+})
 
-if(filtered.length==0){
+if(filtered.length===0){
 document.getElementById("empty").style.display="block"
 return
 }else{
@@ -148,27 +232,25 @@ filtered.forEach(a=>{
 let installed = localStorage.getItem("addon_"+a.id)
 let active = localStorage.getItem("activeAddon")==a.id
 
-let div=document.createElement("div")
-div.className="card"
+let card=document.createElement("div")
+card.className="card"
 
-div.innerHTML=`
+card.innerHTML=`
 <h3>${a.name}</h3>
-<small>by ${a.author || "unknown"}</small>
+<small>${a.category} • by ${a.author || "unknown"}</small>
 
-<button onclick="install('${a.id}')"
-class="${installed?'installed':''}">
+<button onclick="install('${a.id}')" class="${installed?'installed':'install'}">
 ${installed?'Installed':'Install'}
 </button>
 
-<button onclick="useAddon('${a.id}')"
-class="${active?'active':''}">
+<button onclick="useAddon('${a.id}')" class="${active?'active':''}">
 ${active?'Active':'Use'}
 </button>
 
 ${a.vip ? '<button class="vip" onclick="unlockVIP()">VIP</button>' : ''}
 `
 
-grid.appendChild(div)
+grid.appendChild(card)
 
 })
 
@@ -177,81 +259,89 @@ grid.appendChild(div)
 /* INSTALL */
 async function install(id){
 
-let doc=await db.collection("addons").doc(id).get()
-let data=doc.data()
+let doc = await db.collection("addons").doc(id).get()
+let data = doc.data()
 
-localStorage.setItem("addon_"+id, data.code)
+localStorage.setItem("addon_"+id,data.code)
 
-alert("Addon installed!")
+alert("Addon installed")
 render()
 }
 
 /* USE */
 function useAddon(id){
 
-let addon=localStorage.getItem("addon_"+id)
-if(!addon){
-alert("Install dulu!")
+let code = localStorage.getItem("addon_"+id)
+if(!code){
+alert("Install dulu addon nya")
 return
 }
 
-/* VIP CHECK */
-let data=addons.find(a=>a.id==id)
+let data=addons.find(a=>a.id===id)
+
 if(data.vip && !localStorage.getItem("vip")){
-alert("Addon VIP!")
+alert("Addon VIP. Harus unlock dulu.")
 return
 }
 
 localStorage.setItem("activeAddon",id)
 
-alert("Addon aktif!")
+alert("Addon aktif")
 render()
 }
 
 /* VIP */
 function unlockVIP(){
-alert("Nonton iklan 5 detik...")
+alert("Menonton iklan 5 detik...")
 setTimeout(()=>{
 localStorage.setItem("vip","true")
-alert("VIP aktif!")
+alert("VIP aktif")
 },5000)
 }
 
-/* UPLOAD */
+/* UPLOAD UI */
 function openUpload(){
+document.getElementById("uploadBox").style.display="flex"
+}
 
-let name=prompt("Nama addon?")
-if(!name)return
+function closeUpload(){
+document.getElementById("uploadBox").style.display="none"
+}
 
-let isVIP=confirm("VIP addon?")
+/* UPLOAD */
+async function uploadAddon(){
 
-let input=document.createElement("input")
-input.type="file"
-input.accept=".js"
+let name=document.getElementById("aName").value
+let cat=document.getElementById("aCat").value
+let vip=document.getElementById("aVIP").value==="true"
+let file=document.getElementById("aFile").files[0]
 
-input.onchange=e=>{
-let file=e.target.files[0]
+if(!name || !file){
+alert("Isi semua dulu")
+return
+}
 
 let reader=new FileReader()
+
 reader.onload=async function(){
 
 await db.collection("addons").add({
 name:name,
-vip:isVIP,
+category:cat,
+vip:vip,
 code:reader.result,
 author:user,
 time:Date.now()
 })
 
-alert("Uploaded!")
+alert("Addon berhasil diupload")
+closeUpload()
 loadAddons()
 
 }
 
 reader.readAsText(file)
-}
 
-input.click()
 }
 
 /* BACK */

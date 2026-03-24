@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KhawaBuild X PRO</title>
 
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <style>
 body{
 margin:0;
@@ -23,25 +28,35 @@ flex-direction:column;
 justify-content:center;
 align-items:center;
 gap:20px;
-background:linear-gradient(135deg,#111,#1c1c1c);
+background:#111;
 z-index:999;
 }
 
 .startBtn{
-padding:15px 25px;
-background:linear-gradient(45deg,#00aaff,#0066ff);
+padding:14px 20px;
+background:#00aaff;
 border:none;
 color:white;
-border-radius:8px;
+border-radius:6px;
 }
 
-/* TOP */
+/* TOPBAR */
 #topbar{
-background:#141414;
-padding:12px;
+background:#121212;
+padding:10px;
 display:flex;
 justify-content:space-between;
 align-items:center;
+border-bottom:1px solid #333;
+}
+
+#topbar button{
+background:#1f1f1f;
+border:none;
+color:white;
+padding:8px 12px;
+border-radius:6px;
+margin:2px;
 }
 
 /* PREVIEW */
@@ -60,16 +75,10 @@ border:2px dashed transparent;
 padding:10px;
 margin:8px 0;
 position:relative;
-transition:0.2s;
-}
-
-.element:hover{
-border-color:#555;
 }
 
 .element.selected{
 border-color:#00aaff;
-box-shadow:0 0 10px #00aaff;
 }
 
 /* DELETE */
@@ -78,11 +87,10 @@ position:absolute;
 top:-10px;
 right:-10px;
 background:red;
-border:none;
 color:white;
+border:none;
 border-radius:50%;
 width:22px;height:22px;
-cursor:pointer;
 }
 
 /* CONTAINER */
@@ -90,7 +98,6 @@ cursor:pointer;
 border:2px dashed #aaa;
 padding:10px;
 min-height:80px;
-border-radius:8px;
 }
 
 /* PANEL */
@@ -103,8 +110,6 @@ display:none;
 max-height:55vh;
 overflow:auto;
 padding:10px;
-border-top:2px solid #00aaff;
-z-index:999;
 }
 
 .panelbtn{
@@ -114,15 +119,12 @@ margin:5px 0;
 background:#333;
 color:white;
 border:none;
-border-radius:6px;
 }
 
 input,select{
 width:100%;
 margin:5px 0;
 padding:6px;
-border-radius:5px;
-border:none;
 }
 </style>
 </head>
@@ -130,24 +132,22 @@ border:none;
 <body>
 
 <div id="startMenu">
-<h2>KhawaBuild X PRO</h2>
-<button class="startBtn" onclick="newProject()">New Project</button>
-<button class="startBtn" onclick="loadProject()">Continue</button>
+<h2>KhawaBuild X</h2>
+<button class="startBtn" onclick="login()">Login Google</button>
+<button class="startBtn" onclick="start()">Masuk Editor</button>
 </div>
 
 <div id="topbar">
 <div>
 <button onclick="openAdd()">Add</button>
 <button onclick="openStyle()">Style</button>
-<button onclick="save()">Save</button>
+<button onclick="saveLocal()">💾 Local</button>
+<button onclick="saveCloud()">☁️ Cloud</button>
 </div>
 
 <div>
-<button onclick="openAddonPage()">➕ Add-on</button>
-<button onclick="openAddon()">⚡ Use Addon</button>
-<button onclick="duplicate()">Duplicate</button>
-<button onclick="bringFront()">Front</button>
-<button onclick="sendBack()">Back</button>
+<button onclick="openAddon()">⚡ Addon</button>
+<button onclick="deployGithub()">🚀 Deploy</button>
 </div>
 </div>
 
@@ -156,42 +156,52 @@ border:none;
 
 <script>
 
-let preview=document.getElementById("preview")
-let panel=document.getElementById("panel")
-let selected=null
-
-/* PROJECT */
-function newProject(){
-localStorage.removeItem("project")
-preview.innerHTML=""
-document.getElementById("startMenu").style.display="none"
+/* GLOBAL */
+window.builder = {
+selected:null,
+preview:null,
+panel:null
 }
 
-function loadProject(){
-let data=localStorage.getItem("project")
-if(data)preview.innerHTML=data
-document.getElementById("startMenu").style.display="none"
+builder.preview = document.getElementById("preview")
+builder.panel = document.getElementById("panel")
+
+/* FIREBASE */
+const firebaseConfig = {
+apiKey: "AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
+authDomain: "knockthem-25783.firebaseapp.com",
+projectId: "knockthem-25783",
+storageBucket: "knockthem-25783.firebasestorage.app",
+messagingSenderId: "620826019120",
+appId: "1:620826019120:web:7a0990878cc55e3a1bf4f5"
+};
+
+firebase.initializeApp(firebaseConfig)
+const auth = firebase.auth()
+const db = firebase.firestore()
+
+function login(){
+let provider = new firebase.auth.GoogleAuthProvider()
+auth.signInWithPopup(provider)
 }
 
-/* SAVE */
-function save(){
-localStorage.setItem("project",preview.innerHTML)
+function start(){
+document.getElementById("startMenu").style.display="none"
 }
 
 /* SELECT */
 function select(el){
-if(selected)selected.classList.remove("selected")
-selected=el
+if(builder.selected) builder.selected.classList.remove("selected")
+builder.selected = el
 el.classList.add("selected")
 }
 
 /* CREATE */
 function create(html){
+let target = builder.preview
 
-let target=preview
-
-if(selected && selected.querySelector(".container")){
-target=selected.querySelector(".container")
+if(builder.selected && builder.selected.querySelector(".container")){
+target = builder.selected.querySelector(".container")
 }
 
 let el=document.createElement("div")
@@ -206,135 +216,135 @@ select(el)
 el.querySelector(".deleteBtn").onclick=e=>{
 e.stopPropagation()
 el.remove()
-save()
 }
 
 target.appendChild(el)
-save()
 }
 
 /* ADD */
 function openAdd(){
-panel.style.display="block"
-panel.innerHTML=`
-<b>Add Element</b>
+builder.panel.style.display="block"
+builder.panel.innerHTML=`
+<b>Add</b>
 <button onclick="closePanel()">X</button>
 
-<button class="panelbtn" onclick="addContainer()">Container</button>
 <button class="panelbtn" onclick="create('<h1 contenteditable>Header</h1>')">Header</button>
 <button class="panelbtn" onclick="create('<p contenteditable>Text</p>')">Text</button>
 <button class="panelbtn" onclick="create('<button>Button</button>')">Button</button>
-<button class="panelbtn" onclick="addImage()">Image</button>
+<button class="panelbtn" onclick="create('<div class=container>Container</div>')">Container</button>
 `
-}
-
-function addContainer(){
-create(`<div class="container">Drop here</div>`)
-}
-
-/* FILE */
-function addImage(){
-let i=document.createElement("input")
-i.type="file"
-i.accept="image/*"
-i.onchange=e=>{
-let url=URL.createObjectURL(e.target.files[0])
-create(`<img src="${url}" style="max-width:100%">`)
-}
-i.click()
 }
 
 /* STYLE */
 function openStyle(){
-if(!selected){alert("Select element dulu!");return}
+if(!builder.selected){alert("Pilih element");return}
 
-panel.style.display="block"
-panel.innerHTML=`
+builder.panel.style.display="block"
+builder.panel.innerHTML=`
 <b>Style</b>
 <button onclick="closePanel()">X</button>
 
-Color<input type=color oninput="selected.style.color=this.value">
-Bg<input type=color oninput="selected.style.background=this.value">
-
-Font Size<input type=range min=10 max=60 oninput="selected.style.fontSize=this.value+'px'">
+Color<input type=color oninput="builder.selected.style.color=this.value">
+Bg<input type=color oninput="builder.selected.style.background=this.value">
 
 Align
-<select onchange="selected.style.textAlign=this.value">
-<option value="left">Left</option>
-<option value="center">Center</option>
-<option value="right">Right</option>
-<option value="justify">Justify</option>
+<select onchange="builder.selected.style.textAlign=this.value">
+<option>left</option>
+<option>center</option>
+<option>right</option>
 </select>
 
-Width<input type=range min=50 max=500 oninput="selected.style.width=this.value+'px'">
-Height<input type=range min=50 max=500 oninput="selected.style.height=this.value+'px'">
-
-Padding<input type=range min=0 max=50 oninput="selected.style.padding=this.value+'px'">
-Margin<input type=range min=0 max=50 oninput="selected.style.margin=this.value+'px'">
-
-Radius<input type=range min=0 max=50 oninput="selected.style.borderRadius=this.value+'px'">
-
-Shadow<input type=range min=0 max=30 oninput="selected.style.boxShadow='0 0 '+this.value+'px black'">
-
-Opacity<input type=range min=0 max=1 step=0.1 oninput="selected.style.opacity=this.value">
-
-Z-index<input type=number oninput="selected.style.zIndex=this.value">
+Size<input type=range min=10 max=60 oninput="builder.selected.style.fontSize=this.value+'px'">
 `
 }
 
-/* ADDON TOOL */
+/* ADDON */
 function openAddon(){
 
 if(!window.customAddon){
-alert("Belum ada addon aktif!")
+alert("Belum ada addon!")
 return
 }
 
-panel.style.display="block"
-window.customAddon.open(panel, selected)
+builder.panel.style.display="block"
 
+window.customAddon.open({
+panel:builder.panel,
+selected:builder.selected,
+create:create
+})
 }
 
-/* EXTRA */
-function duplicate(){
-if(!selected)return
-let clone=selected.cloneNode(true)
-preview.appendChild(clone)
-save()
+/* SAVE */
+let lastSave=0
+
+async function saveCloud(){
+
+let user = auth.currentUser
+if(!user){alert("Login dulu");return}
+
+let now = Date.now()
+if(now - lastSave < 2000){alert("Tunggu!");return}
+lastSave = now
+
+let html = builder.preview.innerHTML
+
+let ref = db.collection("projects").doc(user.uid)
+let doc = await ref.get()
+
+let list = doc.exists ? doc.data().list || [] : []
+
+if(list.length>=2){
+alert("Max 2 project cloud")
+return
 }
 
-function bringFront(){
-if(selected)selected.style.zIndex=999
+list.push({html:html})
+
+await ref.set({list:list})
+
+alert("Tersimpan cloud!")
 }
 
-function sendBack(){
-if(selected)selected.style.zIndex=0
+function saveLocal(){
+localStorage.setItem("project_"+Date.now(),builder.preview.innerHTML)
+alert("Tersimpan lokal!")
+}
+
+/* DEPLOY */
+function deployGithub(){
+
+let html = `
+<!DOCTYPE html>
+<html><body>
+${builder.preview.innerHTML}
+</body></html>
+`
+
+let blob = new Blob([html], {type:"text/html"})
+let a = document.createElement("a")
+a.href = URL.createObjectURL(blob)
+a.download = "index.html"
+a.click()
+
+alert("Upload ke GitHub Pages!")
 }
 
 /* PANEL */
 function closePanel(){
-panel.style.display="none"
-}
-
-/* ADDON PAGE */
-function openAddonPage(){
-window.location.href="addon.html"
+builder.panel.style.display="none"
 }
 
 /* LOAD ADDON */
 let active = localStorage.getItem("activeAddon")
 
 if(active){
-
 let code = localStorage.getItem("addon_"+active)
-
 if(code){
 let script=document.createElement("script")
 script.textContent=code
 document.body.appendChild(script)
-console.log("Addon loaded:", active)
 }
-
 }
 
 </script>

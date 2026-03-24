@@ -2,6 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Addon Marketplace</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -15,39 +16,60 @@ background:#0e0e0e;
 color:white;
 }
 
+/* HEADER */
 #header{
 padding:15px;
 background:#121212;
 display:flex;
 justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #333;
 }
 
+#header input{
+padding:6px;
+border-radius:6px;
+border:none;
+}
+
+/* GRID */
 #grid{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
 gap:15px;
 padding:15px;
 }
 
+/* CARD */
 .card{
 background:#1a1a1a;
-padding:10px;
-border-radius:10px;
+border-radius:12px;
+padding:12px;
 box-shadow:0 0 10px rgba(0,0,0,0.5);
 }
+
+.card h3{margin:5px 0}
+.card small{color:#aaa}
 
 .card button{
 width:100%;
 margin-top:5px;
-padding:6px;
+padding:8px;
 border:none;
 border-radius:6px;
 background:#333;
 color:white;
 }
 
-.vip{
-background:#ff9800;
+.vip{background:#ff9800}
+.active{background:#00aaff}
+.installed{background:#4caf50}
+
+/* EMPTY */
+#empty{
+text-align:center;
+margin-top:50px;
+color:#777;
 }
 </style>
 </head>
@@ -56,12 +78,25 @@ background:#ff9800;
 
 <div id="header">
 <b>Addon Marketplace</b>
+
+<div>
+<input id="search" placeholder="Search..." oninput="render()">
+<button onclick="openUpload()">➕</button>
 <button onclick="back()">⬅</button>
+</div>
 </div>
 
 <div id="grid"></div>
 
+<div id="empty" style="display:none">
+<p>Belum ada addon 😢</p>
+</div>
+
 <script>
+
+/* LOGIN CHECK */
+let user = localStorage.getItem("user")
+if(!user) location.href="login.html"
 
 /* FIREBASE */
 const firebaseConfig={
@@ -73,29 +108,64 @@ projectId:"knockthem-25783"
 firebase.initializeApp(firebaseConfig)
 const db=firebase.firestore()
 
-let grid=document.getElementById("grid")
+let addons=[]
 
-/* LOAD ADDONS */
+/* LOAD */
 async function loadAddons(){
 
 let snap=await db.collection("addons").get()
 
-grid.innerHTML=""
+addons=[]
 
 snap.forEach(doc=>{
+let d=doc.data()
+d.id=doc.id
+addons.push(d)
+})
 
-let a=doc.data()
+render()
+}
+
+/* RENDER */
+function render(){
+
+let q=document.getElementById("search").value.toLowerCase()
+let grid=document.getElementById("grid")
+
+grid.innerHTML=""
+
+let filtered=addons.filter(a=>a.name.toLowerCase().includes(q))
+
+if(filtered.length==0){
+document.getElementById("empty").style.display="block"
+return
+}else{
+document.getElementById("empty").style.display="none"
+}
+
+filtered.forEach(a=>{
+
+let installed = localStorage.getItem("addon_"+a.id)
+let active = localStorage.getItem("activeAddon")==a.id
 
 let div=document.createElement("div")
 div.className="card"
 
 div.innerHTML=`
 <h3>${a.name}</h3>
+<small>by ${a.author || "unknown"}</small>
 
-<button onclick="install('${doc.id}')">Install</button>
-<button onclick="useAddon('${doc.id}')">Gunakan</button>
+<button onclick="install('${a.id}')"
+class="${installed?'installed':''}">
+${installed?'Installed':'Install'}
+</button>
 
-${a.vip ? '<button class="vip" onclick="unlockVIP()">Unlock VIP</button>' : ''}
+<button onclick="useAddon('${a.id}')"
+class="${active?'active':''}">
+${active?'Active':'Use'}
+</button>
+
+${a.vip ? '<button class="vip" onclick="unlockVIP()">VIP</button>' : ''}
 `
 
 grid.appendChild(div)
@@ -112,41 +182,79 @@ let data=doc.data()
 
 localStorage.setItem("addon_"+id, data.code)
 
-alert("Addon terinstall!")
+alert("Addon installed!")
+render()
 }
 
 /* USE */
 function useAddon(id){
 
-let data=localStorage.getItem("vip")
 let addon=localStorage.getItem("addon_"+id)
-
 if(!addon){
 alert("Install dulu!")
 return
 }
 
-/* CEK VIP */
-if(id=="jsplus" && !data){
-alert("VIP dulu!")
+/* VIP CHECK */
+let data=addons.find(a=>a.id==id)
+if(data.vip && !localStorage.getItem("vip")){
+alert("Addon VIP!")
 return
 }
 
-localStorage.setItem("activeAddon", id)
+localStorage.setItem("activeAddon",id)
 
 alert("Addon aktif!")
+render()
 }
 
 /* VIP */
 function unlockVIP(){
 alert("Nonton iklan 5 detik...")
-
 setTimeout(()=>{
 localStorage.setItem("vip","true")
 alert("VIP aktif!")
 },5000)
 }
 
+/* UPLOAD */
+function openUpload(){
+
+let name=prompt("Nama addon?")
+if(!name)return
+
+let isVIP=confirm("VIP addon?")
+
+let input=document.createElement("input")
+input.type="file"
+input.accept=".js"
+
+input.onchange=e=>{
+let file=e.target.files[0]
+
+let reader=new FileReader()
+reader.onload=async function(){
+
+await db.collection("addons").add({
+name:name,
+vip:isVIP,
+code:reader.result,
+author:user,
+time:Date.now()
+})
+
+alert("Uploaded!")
+loadAddons()
+
+}
+
+reader.readAsText(file)
+}
+
+input.click()
+}
+
+/* BACK */
 function back(){
 location.href="index.html"
 }

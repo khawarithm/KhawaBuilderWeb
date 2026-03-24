@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add-on Store</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#0f0f0f;
+color:white;
+text-align:center;
+padding:20px;
+}
+
+.card{
+background:#1c1c1c;
+padding:15px;
+margin:10px;
+border-radius:10px;
+}
+
+button{
+padding:10px 15px;
+margin:5px;
+border:none;
+border-radius:6px;
+background:#00aaff;
+color:white;
+}
+
+.empty{
+margin-top:50px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Add-on Store</h2>
+
+<div id="addonList"></div>
+
+<div class="empty" id="empty">
+<p>Belum memiliki add-on :(</p>
+<button onclick="downloadAddon()">Unduh Add-on</button>
+</div>
+
+<script>
+
+let addons = JSON.parse(localStorage.getItem("addons") || "[]")
+
+function render(){
+
+let list=document.getElementById("addonList")
+let empty=document.getElementById("empty")
+
+list.innerHTML=""
+
+if(addons.length==0){
+empty.style.display="block"
+}else{
+empty.style.display="none"
+
+addons.forEach(a=>{
+list.innerHTML+=`
+<div class="card">
+<b>${a}</b><br>
+<button onclick="useAddon('${a}')">Gunakan</button>
+</div>
+`
+})
+}
+
+}
+
+function downloadAddon(){
+window.open("https://youtube.com/@Khawarithm")
+}
+
+/* INSTALL ADDON */
+function install(){
+
+let i=document.createElement("input")
+i.type="file"
+i.accept=".js"
+
+i.onchange=e=>{
+
+let file=e.target.files[0]
+
+addons.push(file.name)
+localStorage.setItem("addons",JSON.stringify(addons))
+
+let reader=new FileReader()
+
+reader.onload=function(){
+localStorage.setItem("addon_"+file.name,reader.result)
+alert("Addon terinstall!")
+render()
+}
+
+reader.readAsText(file)
+
+}
+
+i.click()
+}
+
+/* USE */
+function useAddon(name){
+localStorage.setItem("activeAddon",name)
+alert("Addon aktif! balik ke editor")
+}
+
+/* BUTTON INSTALL */
+document.body.innerHTML += `
+<button onclick="install()">Install Add-on</button>
+`
+
+render()
+
+</script>
+
+</body>
+</html>

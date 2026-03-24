@@ -11,70 +11,40 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <style>
-body{
-margin:0;
-font-family:Arial;
-background:#0e0e0e;
-color:white;
-}
+body{margin:0;font-family:Arial;background:#0e0e0e;color:white}
 
 /* START */
 #startMenu{
-position:fixed;
-top:0;left:0;
-width:100%;height:100%;
-display:flex;
-flex-direction:column;
-justify-content:center;
-align-items:center;
-gap:20px;
-background:#111;
-z-index:999;
+position:fixed;top:0;left:0;width:100%;height:100%;
+display:flex;flex-direction:column;justify-content:center;align-items:center;
+gap:20px;background:#111;z-index:999;
 }
 
 .startBtn{
-padding:14px 20px;
-background:#00aaff;
-border:none;
-color:white;
-border-radius:6px;
+padding:14px 20px;background:#00aaff;border:none;color:white;border-radius:6px;
 }
 
 /* TOPBAR */
 #topbar{
-background:#121212;
-padding:10px;
-display:flex;
-justify-content:space-between;
-align-items:center;
+background:#121212;padding:10px;
+display:flex;justify-content:space-between;align-items:center;
 border-bottom:1px solid #333;
 }
 
 #topbar button{
-background:#1f1f1f;
-border:none;
-color:white;
-padding:8px 12px;
-border-radius:6px;
-margin:2px;
+background:#1f1f1f;border:none;color:white;
+padding:8px 12px;border-radius:6px;margin:2px;
 }
 
 /* PREVIEW */
 #preview{
-background:white;
-color:black;
-min-height:80vh;
-margin:10px;
-border-radius:10px;
-padding:10px;
+background:white;color:black;
+min-height:80vh;margin:10px;border-radius:10px;padding:10px;
 }
 
 /* ELEMENT */
 .element{
-border:2px dashed transparent;
-padding:10px;
-margin:8px 0;
-position:relative;
+border:2px dashed transparent;padding:10px;margin:8px 0;position:relative;
 }
 
 .element.selected{
@@ -83,48 +53,30 @@ border-color:#00aaff;
 
 /* DELETE */
 .deleteBtn{
-position:absolute;
-top:-10px;
-right:-10px;
-background:red;
-color:white;
-border:none;
-border-radius:50%;
+position:absolute;top:-10px;right:-10px;
+background:red;color:white;border:none;border-radius:50%;
 width:22px;height:22px;
 }
 
 /* CONTAINER */
 .container{
-border:2px dashed #aaa;
-padding:10px;
-min-height:80px;
+border:2px dashed #aaa;padding:10px;min-height:80px;
 }
 
 /* PANEL */
 #panel{
-position:fixed;
-bottom:0;
-width:100%;
-background:#181818;
-display:none;
-max-height:55vh;
-overflow:auto;
-padding:10px;
+position:fixed;bottom:0;width:100%;
+background:#181818;display:none;max-height:55vh;
+overflow:auto;padding:10px;
 }
 
 .panelbtn{
-width:100%;
-padding:10px;
-margin:5px 0;
-background:#333;
-color:white;
-border:none;
+width:100%;padding:10px;margin:5px 0;
+background:#333;color:white;border:none;
 }
 
 input,select{
-width:100%;
-margin:5px 0;
-padding:6px;
+width:100%;margin:5px 0;padding:6px;
 }
 </style>
 </head>
@@ -157,33 +109,37 @@ padding:6px;
 <script>
 
 /* GLOBAL */
-window.builder = {
-selected:null,
-preview:null,
-panel:null
-}
-
-builder.preview = document.getElementById("preview")
-builder.panel = document.getElementById("panel")
+window.builder={selected:null,preview:null,panel:null}
+builder.preview=document.getElementById("preview")
+builder.panel=document.getElementById("panel")
 
 /* FIREBASE */
-const firebaseConfig = {
-apiKey: "AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
-authDomain: "knockthem-25783.firebaseapp.com",
-projectId: "knockthem-25783",
-storageBucket: "knockthem-25783.firebasestorage.app",
-messagingSenderId: "620826019120",
-appId: "1:620826019120:web:7a0990878cc55e3a1bf4f5"
+const firebaseConfig={
+apiKey:"AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
+authDomain:"knockthem-25783.firebaseapp.com",
+projectId:"knockthem-25783",
+storageBucket:"knockthem-25783.firebasestorage.app",
+messagingSenderId:"620826019120",
+appId:"1:620826019120:web:7a0990878cc55e3a1bf4f5"
 };
 
 firebase.initializeApp(firebaseConfig)
-const auth = firebase.auth()
-const db = firebase.firestore()
+const auth=firebase.auth()
+const db=firebase.firestore()
 
+/* LOGIN */
 function login(){
-let provider = new firebase.auth.GoogleAuthProvider()
+let provider=new firebase.auth.GoogleAuthProvider()
 auth.signInWithPopup(provider)
+.then(()=>alert("Login sukses!"))
+.catch(e=>alert(e.message))
 }
+
+auth.onAuthStateChanged(user=>{
+if(user){
+console.log("Login:",user.displayName)
+}
+})
 
 function start(){
 document.getElementById("startMenu").style.display="none"
@@ -191,17 +147,17 @@ document.getElementById("startMenu").style.display="none"
 
 /* SELECT */
 function select(el){
-if(builder.selected) builder.selected.classList.remove("selected")
-builder.selected = el
+if(builder.selected)builder.selected.classList.remove("selected")
+builder.selected=el
 el.classList.add("selected")
 }
 
 /* CREATE */
 function create(html){
-let target = builder.preview
+let target=builder.preview
 
 if(builder.selected && builder.selected.querySelector(".container")){
-target = builder.selected.querySelector(".container")
+target=builder.selected.querySelector(".container")
 }
 
 let el=document.createElement("div")
@@ -221,17 +177,57 @@ el.remove()
 target.appendChild(el)
 }
 
-/* ADD */
+/* MEDIA */
+function addImage(){
+let i=document.createElement("input")
+i.type="file"
+i.accept="image/*"
+i.onchange=e=>{
+let url=URL.createObjectURL(e.target.files[0])
+create(`<img src="${url}" style="max-width:100%">`)
+}
+i.click()
+}
+
+function addVideo(){
+let i=document.createElement("input")
+i.type="file"
+i.accept="video/*"
+i.onchange=e=>{
+let url=URL.createObjectURL(e.target.files[0])
+create(`<video src="${url}" controls></video>`)
+}
+i.click()
+}
+
+function addAudio(){
+let i=document.createElement("input")
+i.type="file"
+i.accept="audio/*"
+i.onchange=e=>{
+let url=URL.createObjectURL(e.target.files[0])
+create(`<audio src="${url}" controls></audio>`)
+}
+i.click()
+}
+
+/* ADD MENU */
 function openAdd(){
 builder.panel.style.display="block"
 builder.panel.innerHTML=`
-<b>Add</b>
+<b>Add Element</b>
 <button onclick="closePanel()">X</button>
 
 <button class="panelbtn" onclick="create('<h1 contenteditable>Header</h1>')">Header</button>
 <button class="panelbtn" onclick="create('<p contenteditable>Text</p>')">Text</button>
 <button class="panelbtn" onclick="create('<button>Button</button>')">Button</button>
 <button class="panelbtn" onclick="create('<div class=container>Container</div>')">Container</button>
+
+<hr>
+
+<button class="panelbtn" onclick="addImage()">🖼 Image</button>
+<button class="panelbtn" onclick="addVideo()">🎥 Video</button>
+<button class="panelbtn" onclick="addAudio()">🔊 Audio</button>
 `
 }
 
@@ -260,7 +256,6 @@ Size<input type=range min=10 max=60 oninput="builder.selected.style.fontSize=thi
 
 /* ADDON */
 function openAddon(){
-
 if(!window.customAddon){
 alert("Belum ada addon!")
 return
@@ -279,20 +274,18 @@ create:create
 let lastSave=0
 
 async function saveCloud(){
-
-let user = auth.currentUser
+let user=auth.currentUser
 if(!user){alert("Login dulu");return}
 
-let now = Date.now()
-if(now - lastSave < 2000){alert("Tunggu!");return}
-lastSave = now
+let now=Date.now()
+if(now-lastSave<2000){alert("Tunggu!");return}
+lastSave=now
 
-let html = builder.preview.innerHTML
+let html=builder.preview.innerHTML
 
-let ref = db.collection("projects").doc(user.uid)
-let doc = await ref.get()
-
-let list = doc.exists ? doc.data().list || [] : []
+let ref=db.collection("projects").doc(user.uid)
+let doc=await ref.get()
+let list=doc.exists?doc.data().list||[]:[]
 
 if(list.length>=2){
 alert("Max 2 project cloud")
@@ -300,7 +293,6 @@ return
 }
 
 list.push({html:html})
-
 await ref.set({list:list})
 
 alert("Tersimpan cloud!")
@@ -313,20 +305,12 @@ alert("Tersimpan lokal!")
 
 /* DEPLOY */
 function deployGithub(){
-
-let html = `
-<!DOCTYPE html>
-<html><body>
-${builder.preview.innerHTML}
-</body></html>
-`
-
-let blob = new Blob([html], {type:"text/html"})
-let a = document.createElement("a")
-a.href = URL.createObjectURL(blob)
-a.download = "index.html"
+let html=`<!DOCTYPE html><html><body>${builder.preview.innerHTML}</body></html>`
+let blob=new Blob([html],{type:"text/html"})
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="index.html"
 a.click()
-
 alert("Upload ke GitHub Pages!")
 }
 
@@ -336,10 +320,9 @@ builder.panel.style.display="none"
 }
 
 /* LOAD ADDON */
-let active = localStorage.getItem("activeAddon")
-
+let active=localStorage.getItem("activeAddon")
 if(active){
-let code = localStorage.getItem("addon_"+active)
+let code=localStorage.getItem("addon_"+active)
 if(code){
 let script=document.createElement("script")
 script.textContent=code

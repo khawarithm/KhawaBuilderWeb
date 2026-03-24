@@ -10,43 +10,89 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#0e0e0e;color:white}
+body{
+margin:0;
+font-family:Arial;
+background:#0e0e0e;
+color:white;
+}
 
 /* TOPBAR */
 #topbar{
-background:#121212;padding:10px;
-display:flex;justify-content:space-between;
+background:#121212;
+padding:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-bottom:1px solid #333;
 }
 
-button{
-background:#1f1f1f;color:white;border:none;
-padding:8px 12px;margin:2px;border-radius:6px;
+.group button{
+background:#1f1f1f;
+color:white;
+border:none;
+padding:8px 12px;
+margin:2px;
+border-radius:6px;
 }
 
 /* PREVIEW */
 #preview{
-background:white;color:black;
-min-height:80vh;margin:10px;
-border-radius:10px;padding:10px;
+background:white;
+color:black;
+min-height:80vh;
+margin:10px;
+border-radius:10px;
+padding:10px;
+overflow:auto;
 }
 
 /* ELEMENT */
-.element{border:2px dashed transparent;margin:8px;padding:10px;position:relative}
-.element.selected{border-color:#00aaff}
+.element{
+border:2px dashed transparent;
+margin:8px;
+padding:10px;
+position:relative;
+}
 
+.element.selected{
+border-color:#00aaff;
+}
+
+/* DELETE */
 .deleteBtn{
-position:absolute;top:-10px;right:-10px;
-background:red;color:white;border:none;border-radius:50%;
+position:absolute;
+top:-10px;
+right:-10px;
+background:red;
+color:white;
+border:none;
+border-radius:50%;
+width:20px;height:20px;
 }
 
 /* PANEL */
 #panel{
-position:fixed;bottom:0;width:100%;
-background:#181818;display:none;
-max-height:55vh;overflow:auto;padding:10px;
+position:fixed;
+bottom:0;
+width:100%;
+background:#181818;
+display:none;
+max-height:60vh;
+overflow:auto;
+padding:10px;
+border-top:1px solid #333;
 }
 
-.panelbtn{width:100%;padding:10px;margin:5px 0;background:#333;color:white;border:none}
+.panelbtn{
+width:100%;
+padding:10px;
+margin:5px 0;
+background:#333;
+color:white;
+border:none;
+border-radius:6px;
+}
 
 /* CONTAINER */
 .container{
@@ -60,7 +106,7 @@ padding:10px;
 <body>
 
 <div id="topbar">
-<div>
+<div class="group">
 <button onclick="openAdd()">Add</button>
 <button onclick="openStyle()">Style</button>
 <button onclick="openBodyStyle()">Body</button>
@@ -69,7 +115,7 @@ padding:10px;
 <button onclick="saveCloud()">☁️ Cloud</button>
 </div>
 
-<div>
+<div class="group">
 <button onclick="openAddon()">⚡ Addon</button>
 <button onclick="downloadZIP()">📦 ZIP</button>
 <button onclick="deployHTML()">⬇️ HTML</button>
@@ -111,6 +157,7 @@ el.classList.add("selected")
 /* CREATE */
 function create(html){
 let target=preview
+
 if(selected && selected.querySelector(".container")){
 target=selected.querySelector(".container")
 }
@@ -132,22 +179,21 @@ el.remove()
 target.appendChild(el)
 }
 
-/* MEDIA BASE64 FIX */
-function fileToBase64(file, callback){
-let reader=new FileReader()
-reader.onload=()=>callback(reader.result)
-reader.readAsDataURL(file)
+/* FILE BASE64 */
+function toBase64(file,cb){
+let r=new FileReader()
+r.onload=()=>cb(r.result)
+r.readAsDataURL(file)
 }
 
+/* MEDIA */
 function addImage(){
 let i=document.createElement("input")
 i.type="file"
 i.accept="image/*"
-i.onchange=e=>{
-fileToBase64(e.target.files[0],url=>{
+i.onchange=e=>toBase64(e.target.files[0],url=>{
 create(`<img src="${url}" style="max-width:100%">`)
 })
-}
 i.click()
 }
 
@@ -155,11 +201,9 @@ function addVideo(){
 let i=document.createElement("input")
 i.type="file"
 i.accept="video/*"
-i.onchange=e=>{
-fileToBase64(e.target.files[0],url=>{
+i.onchange=e=>toBase64(e.target.files[0],url=>{
 create(`<video src="${url}" controls></video>`)
 })
-}
 i.click()
 }
 
@@ -167,11 +211,9 @@ function addAudio(){
 let i=document.createElement("input")
 i.type="file"
 i.accept="audio/*"
-i.onchange=e=>{
-fileToBase64(e.target.files[0],url=>{
+i.onchange=e=>toBase64(e.target.files[0],url=>{
 create(`<audio src="${url}" controls></audio>`)
 })
-}
 i.click()
 }
 
@@ -179,8 +221,7 @@ i.click()
 function openAdd(){
 panel.style.display="block"
 panel.innerHTML=`
-<b>Add</b>
-<button onclick="closePanel()">X</button>
+<b>Add Element</b><button onclick="closePanel()">X</button>
 
 <button class="panelbtn" onclick="create('<h1 contenteditable>Header</h1>')">Header</button>
 <button class="panelbtn" onclick="create('<p contenteditable>Text</p>')">Text</button>
@@ -195,28 +236,58 @@ panel.innerHTML=`
 `
 }
 
-/* STYLE */
+/* STYLE PRO */
 function openStyle(){
-if(!selected){alert("Pilih element");return}
+
+if(!selected){alert("Pilih element!");return}
+
 panel.style.display="block"
+
 panel.innerHTML=`
-<b>Style</b>
-<button onclick="closePanel()">X</button>
+<b>Style PRO</b><button onclick="closePanel()">X</button>
 
 Color<input type=color oninput="selected.style.color=this.value">
-Bg<input type=color oninput="selected.style.background=this.value">
+Background<input type=color oninput="selected.style.background=this.value">
+
+Font Size<input type=range min=10 max=100 oninput="selected.style.fontSize=this.value+'px'">
+
 Align<select onchange="selected.style.textAlign=this.value">
 <option>left</option><option>center</option><option>right</option>
 </select>
+
+Width<input type=range min=50 max=500 oninput="selected.style.width=this.value+'px'">
+Height<input type=range min=50 max=500 oninput="selected.style.height=this.value+'px'">
+
+Padding<input type=range min=0 max=50 oninput="selected.style.padding=this.value+'px'">
+Margin<input type=range min=0 max=50 oninput="selected.style.margin=this.value+'px'">
+
+Radius<input type=range min=0 max=50 oninput="selected.style.borderRadius=this.value+'px'">
+
+Border Width<input type=range min=0 max=10 oninput="selected.style.borderWidth=this.value+'px'">
+Border Color<input type=color oninput="selected.style.borderColor=this.value">
+
+<button class="panelbtn" onclick="bgImage()">Background Image</button>
 `
 }
 
-/* BODY STYLE */
+function bgImage(){
+let i=document.createElement("input")
+i.type="file"
+i.accept="image/*"
+i.onchange=e=>{
+toBase64(e.target.files[0],url=>{
+selected.style.backgroundImage=`url(${url})`
+selected.style.backgroundSize="cover"
+})
+}
+i.click()
+}
+
+/* BODY */
 function openBodyStyle(){
 panel.style.display="block"
 panel.innerHTML=`
-<b>Body</b>
-<button onclick="closePanel()">X</button>
+<b>Body</b><button onclick="closePanel()">X</button>
 
 Background<input type=color oninput="preview.style.background=this.value">
 Text<input type=color oninput="preview.style.color=this.value">
@@ -231,21 +302,19 @@ location.href="addon.html"
 /* SAVE */
 function saveLocal(){
 localStorage.setItem("project_"+Date.now(),preview.innerHTML)
-alert("Saved local!")
+alert("Saved local")
 }
 
 async function saveCloud(){
-let html=preview.innerHTML
 let ref=db.collection("projects").doc(currentUser)
 let doc=await ref.get()
 let list=doc.exists?doc.data().list||[]:[]
 
 if(list.length>=2){alert("Max 2");return}
 
-list.push({html})
+list.push({html:preview.innerHTML})
 await ref.set({list})
-
-alert("Saved cloud!")
+alert("Saved cloud")
 }
 
 /* LOAD */
@@ -253,38 +322,35 @@ function openLoad(){
 panel.style.display="block"
 panel.innerHTML=`<b>Load</b><button onclick="closePanel()">X</button>`
 
-/* LOCAL */
 for(let i in localStorage){
 if(i.startsWith("project_")){
 panel.innerHTML+=`<button class="panelbtn" onclick="loadLocal('${i}')">${i}</button>`
 }
 }
 
-/* CLOUD */
-loadCloudList()
+loadCloud()
 }
 
-function loadLocal(key){
-preview.innerHTML=localStorage.getItem(key)
+function loadLocal(k){
+preview.innerHTML=localStorage.getItem(k)
 }
 
-async function loadCloudList(){
-let ref=db.collection("projects").doc(currentUser)
-let doc=await ref.get()
-
+async function loadCloud(){
+let doc=await db.collection("projects").doc(currentUser).get()
 if(!doc.exists)return
 
-doc.data().list.forEach((p,i)=>{
-panel.innerHTML+=`<button class="panelbtn" onclick="loadCloud(${i})">Cloud ${i}</button>`
-})
 window.cloudData=doc.data().list
+
+cloudData.forEach((p,i)=>{
+panel.innerHTML+=`<button class="panelbtn" onclick="loadCloudItem(${i})">Cloud ${i}</button>`
+})
 }
 
-function loadCloud(i){
+function loadCloudItem(i){
 preview.innerHTML=window.cloudData[i].html
 }
 
-/* EXPORT HTML */
+/* CLEAN EXPORT */
 function cleanHTML(){
 let clone=preview.cloneNode(true)
 clone.querySelectorAll(".deleteBtn").forEach(e=>e.remove())
@@ -292,6 +358,7 @@ clone.querySelectorAll(".element").forEach(e=>e.classList.remove("element","sele
 return clone.innerHTML
 }
 
+/* HTML */
 function deployHTML(){
 let html=`<!DOCTYPE html><html><body>${cleanHTML()}</body></html>`
 let blob=new Blob([html])
@@ -304,7 +371,7 @@ a.click()
 /* ZIP */
 async function downloadZIP(){
 let zip=new JSZip()
-zip.file("index.html", `<!DOCTYPE html><html><body>${cleanHTML()}</body></html>`)
+zip.file("index.html",`<!DOCTYPE html><html><body>${cleanHTML()}</body></html>`)
 let blob=await zip.generateAsync({type:"blob"})
 let a=document.createElement("a")
 a.href=URL.createObjectURL(blob)

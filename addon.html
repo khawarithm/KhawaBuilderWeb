@@ -2,8 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Addon Marketplace</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <style>
 body{
@@ -13,54 +15,31 @@ background:#0e0e0e;
 color:white;
 }
 
-/* HEADER */
 #header{
 padding:15px;
 background:#121212;
 display:flex;
 justify-content:space-between;
-align-items:center;
-border-bottom:1px solid #333;
 }
 
-#header button{
-background:#00aaff;
-border:none;
-padding:8px 12px;
-border-radius:6px;
-color:white;
-}
-
-/* GRID */
 #grid{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
 gap:15px;
 padding:15px;
 }
 
-/* CARD */
 .card{
 background:#1a1a1a;
-border-radius:10px;
 padding:10px;
+border-radius:10px;
 box-shadow:0 0 10px rgba(0,0,0,0.5);
 }
 
-.card h3{
-margin:5px 0;
-}
-
-.card p{
-font-size:12px;
-color:#aaa;
-}
-
-/* BUTTON */
 .card button{
 width:100%;
-padding:6px;
 margin-top:5px;
+padding:6px;
 border:none;
 border-radius:6px;
 background:#333;
@@ -68,14 +47,7 @@ color:white;
 }
 
 .vip{
-background:#ff9800 !important;
-}
-
-/* EMPTY */
-#empty{
-text-align:center;
-margin-top:50px;
-color:#777;
+background:#ff9800;
 }
 </style>
 </head>
@@ -84,43 +56,44 @@ color:#777;
 
 <div id="header">
 <b>Addon Marketplace</b>
-<button onclick="goBack()">⬅ Kembali</button>
+<button onclick="back()">⬅</button>
 </div>
 
 <div id="grid"></div>
 
-<div id="empty" style="display:none">
-<p>Belum memiliki add-on :(</p>
-<button onclick="goYT()">Unduh Add-on</button>
-</div>
-
 <script>
 
-/* DATA ADDON */
-let addons = [
-{name:"JS",desc:"Basic interaction",vip:false},
-{name:"HTML+",desc:"UI Elements",vip:false},
-{name:"Style+",desc:"Advanced styling",vip:false},
-{name:"JS+",desc:"Pro scripting",vip:true}
-]
+/* FIREBASE */
+const firebaseConfig={
+apiKey:"AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",
+authDomain:"knockthem-25783.firebaseapp.com",
+projectId:"knockthem-25783"
+};
 
-let grid = document.getElementById("grid")
+firebase.initializeApp(firebaseConfig)
+const db=firebase.firestore()
 
-function render(){
+let grid=document.getElementById("grid")
+
+/* LOAD ADDONS */
+async function loadAddons(){
+
+let snap=await db.collection("addons").get()
 
 grid.innerHTML=""
 
-addons.forEach(a=>{
+snap.forEach(doc=>{
+
+let a=doc.data()
 
 let div=document.createElement("div")
 div.className="card"
 
 div.innerHTML=`
 <h3>${a.name}</h3>
-<p>${a.desc}</p>
 
-<button onclick="install('${a.name}')">Install</button>
-<button onclick="useAddon('${a.name}')">Gunakan</button>
+<button onclick="install('${doc.id}')">Install</button>
+<button onclick="useAddon('${doc.id}')">Gunakan</button>
 
 ${a.vip ? '<button class="vip" onclick="unlockVIP()">Unlock VIP</button>' : ''}
 `
@@ -132,68 +105,53 @@ grid.appendChild(div)
 }
 
 /* INSTALL */
-function install(name){
+async function install(id){
 
-let input=document.createElement("input")
-input.type="file"
-input.accept=".js"
+let doc=await db.collection("addons").doc(id).get()
+let data=doc.data()
 
-input.onchange=e=>{
-let file=e.target.files[0]
+localStorage.setItem("addon_"+id, data.code)
 
-let reader=new FileReader()
-reader.onload=function(){
-
-localStorage.setItem("addon_"+name, reader.result)
-alert(name+" terinstall!")
-
-}
-reader.readAsText(file)
-}
-
-input.click()
+alert("Addon terinstall!")
 }
 
 /* USE */
-function useAddon(name){
+function useAddon(id){
 
-/* CEK VIP */
-let isVIP = localStorage.getItem("vip")
+let data=localStorage.getItem("vip")
+let addon=localStorage.getItem("addon_"+id)
 
-let data = addons.find(a=>a.name===name)
-
-if(data.vip && !isVIP){
-alert("Addon ini VIP! Unlock dulu!")
+if(!addon){
+alert("Install dulu!")
 return
 }
 
-localStorage.setItem("activeAddon", name)
+/* CEK VIP */
+if(id=="jsplus" && !data){
+alert("VIP dulu!")
+return
+}
 
-alert(name+" digunakan!")
+localStorage.setItem("activeAddon", id)
+
+alert("Addon aktif!")
 }
 
 /* VIP */
 function unlockVIP(){
-
-alert("Tonton iklan 5 detik...")
+alert("Nonton iklan 5 detik...")
 
 setTimeout(()=>{
 localStorage.setItem("vip","true")
-alert("VIP terbuka!")
+alert("VIP aktif!")
 },5000)
-
 }
 
-/* NAV */
-function goBack(){
+function back(){
 location.href="index.html"
 }
 
-function goYT(){
-window.open("https://youtube.com/@Khawarithm")
-}
-
-render()
+loadAddons()
 
 </script>
 

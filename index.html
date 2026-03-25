@@ -171,19 +171,48 @@ panel.innerHTML=`
 }  
   
 /* STYLE */  
-function openStyle(){  
-if(!selected){alert("Pilih element");return}  
-panel.style.display="block"  
-panel.innerHTML=`  
-<b>Style</b><button onclick="closePanel()">X</button>  
-Color<input type=color oninput="selected.style.color=this.value">  
-Bg<input type=color oninput="selected.style.background=this.value">  
-Font<input type=range min=10 max=60 oninput="selected.style.fontSize=this.value+'px'">  
-Width<input type=range min=50 max=500 oninput="selected.style.width=this.value+'px'">  
-Height<input type=range min=50 max=500 oninput="selected.style.height=this.value+'px'">  
-`  
+function openStyle(){
+
+if(!selected){alert("Pilih element");return}
+
+panel.style.display="block"
+
+panel.innerHTML=`
+<b>Style</b>
+<button onclick="closePanel()">X</button>
+
+Color<input type=color oninput="selected.style.color=this.value">
+
+Bg<input type=color oninput="selected.style.background=this.value">
+
+Font Size
+<input type=number placeholder="px"
+oninput="selected.style.fontSize=this.value+'px'">
+
+Width
+<input type=number placeholder="px"
+oninput="selected.style.width=this.value+'px'">
+
+Height
+<input type=number placeholder="px"
+oninput="selected.style.height=this.value+'px'">
+
+Padding
+<input type=number placeholder="px"
+oninput="selected.style.padding=this.value+'px'">
+
+Margin
+<input type=number placeholder="px"
+oninput="selected.style.margin=this.value+'px'">
+
+Text Align
+<select onchange="selected.style.textAlign=this.value">
+<option>left</option>
+<option>center</option>
+<option>right</option>
+</select>
+`
 }  
-  
 /* BODY */  
 function openBody(){  
 panel.style.display="block"  
@@ -279,14 +308,45 @@ clone.querySelectorAll(".deleteBtn").forEach(e=>e.remove())
 clone.querySelectorAll(".element").forEach(e=>e.classList.remove("element","selected"))  
 return clone.innerHTML  
 }  
-  
-function downloadHTML(){  
-let blob=new Blob([`<html><body>${clean()}</body></html>`])  
-let a=document.createElement("a")  
-a.href=URL.createObjectURL(blob)  
-a.download="index.html"  
-a.click()  
-}  
+
+function downloadHTML(){
+
+let clone = preview.cloneNode(true)
+
+/* hapus UI */
+clone.querySelectorAll(".deleteBtn").forEach(e=>e.remove())
+clone.querySelectorAll(".element").forEach(e=>{
+e.classList.remove("element","selected")
+})
+
+/* ambil style */
+let style = `
+<style>
+body{font-family:Arial}
+img,video{max-width:100%}
+</style>
+`
+
+let html = `
+<!DOCTYPE html>
+<html>
+<head>
+${style}
+</head>
+<body>
+
+${clone.innerHTML}
+
+</body>
+</html>
+`
+
+let blob=new Blob([html])
+let a=document.createElement("a")
+a.href=URL.createObjectURL(blob)
+a.download="index.html"
+a.click()
+}
   
 async function downloadZIP(){  
 let zip=new JSZip()  

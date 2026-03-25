@@ -1,289 +1,311 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KhawaBuild X</title>
-
-<style>
-body{margin:0;font-family:Arial;background:#0e0e0e;color:white}
-
-#topbar{
-display:flex;justify-content:space-between;
-padding:10px;background:#121212
-}
-
-button{
-background:#1f1f1f;color:white;border:none;
-padding:8px;margin:2px;border-radius:6px
-}
-
-#preview{
-background:white;color:black;
-min-height:80vh;margin:10px;
-padding:10px;border-radius:10px
-}
-
-.element{
-border:2px dashed transparent;
-margin:8px;padding:10px;
-position:relative
-}
-.element.selected{border-color:#00aaff}
-
-.deleteBtn{
-position:absolute;top:-10px;right:-10px;
-background:red;color:white;border:none;
-border-radius:50%
-}
-
-#panel{
-position:fixed;bottom:0;width:100%;
-background:#181818;display:none;
-max-height:60vh;overflow:auto;padding:10px
-}
-
-.panelbtn{
-width:100%;padding:10px;margin:5px 0;
-background:#333;color:white;border:none
-}
-
-.container{
-border:2px dashed #aaa;
-min-height:80px;padding:10px
-}
-</style>
-</head>
-
-<body>
-
-<div id="topbar">
-<div>
-<button onclick="openAdd()">Add</button>
-<button onclick="openStyle()">Style</button>
-<button onclick="runAddon()">Addon</button>
-<button onclick="downloadHTML()">Download</button>
-</div>
-</div>
-
-<div id="preview"></div>
-<div id="panel"></div>
-
-<script>
-
-let preview=document.getElementById("preview")
-let panel=document.getElementById("panel")
-let selected=null
-
-/* SELECT */
-function select(el){
-if(selected)selected.classList.remove("selected")
-selected=el
-el.classList.add("selected")
-}
-
-/* CREATE */
-function create(html){
-let target=preview
-
-if(selected && selected.querySelector(".container")){
-target=selected.querySelector(".container")
-}
-
-let el=document.createElement("div")
-el.className="element"
-el.innerHTML=`<button class="deleteBtn">x</button>${html}`
-
-el.addEventListener("click",function(e){
-if(e.target!==el) return
-select(el)
-})
-
-el.querySelector(".deleteBtn").onclick=e=>{
-e.stopPropagation()
-el.remove()
-}
-
-target.appendChild(el)
-}
-
-/* ADD */
-function openAdd(){
-panel.style.display="block"
-panel.innerHTML=`
-<b>Add</b>
-<button onclick="closePanel()">X</button>
-
-<button class="panelbtn" onclick="create('<h1 contenteditable>Header</h1>')">Header</button>
-<button class="panelbtn" onclick="create('<p contenteditable>Text</p>')">Text</button>
-<button class="panelbtn" onclick="create('<button>Button</button>')">Button</button>
-<button class="panelbtn" onclick="create('<div class=container></div>')">Container</button>
-`
-}
-
-/* STYLE ANGKA */
-function openStyle(){
-if(!selected){alert("Pilih dulu");return}
-
-panel.style.display="block"
-
-panel.innerHTML=`
-<b>Style</b>
-<button onclick="closePanel()">X</button>
-
-Color<input type=color oninput="selected.style.color=this.value">
-Bg<input type=color oninput="selected.style.background=this.value">
-
-Font Size
-<input type=number oninput="selected.style.fontSize=this.value+'px'">
-
-Width
-<input type=number oninput="selected.style.width=this.value+'px'">
-
-Height
-<input type=number oninput="selected.style.height=this.value+'px'">
-
-Padding
-<input type=number oninput="selected.style.padding=this.value+'px'">
-
-Margin
-<input type=number oninput="selected.style.margin=this.value+'px'">
-
-Text Align
-<select onchange="selected.style.textAlign=this.value">
-<option>left</option>
-<option>center</option>
-<option>right</option>
-</select>
-`
-}
-
-/* EXPORT FIX */
-function downloadHTML(){
-
-let clone=preview.cloneNode(true)
-
-/* hapus UI */
-clone.querySelectorAll(".deleteBtn").forEach(e=>e.remove())
-clone.querySelectorAll(".element").forEach(e=>{
-e.classList.remove("element","selected")
-})
-
-let html=`
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-body{font-family:Arial}
-</style>
-</head>
-<body>
-
-${clone.innerHTML}
-
-</body>
-</html>
-`
-
-let blob=new Blob([html])
-let a=document.createElement("a")
-a.href=URL.createObjectURL(blob)
-a.download="index.html"
-a.click()
-}
-
-/* ADDON PARSER */
-function parseAddon(code){
-
-let lines=code.split("\n")
-
-let name=""
-let blocks=[]
-
-lines.forEach(line=>{
-
-if(line.startsWith("namaaddon:")){
-name=line.split(":")[1]
-}
-
-if(line.startsWith("add:")){
-let part=line.replace("add:","")
-let [title,cmd]=part.split("=")
-
-blocks.push({
-title:title.trim(),
-code:cmd.trim()
-})
-}
-
-})
-
-return {name,blocks}
-}
-
-/* RUN ADDON */
-function runAddon(){
-
-let raw=localStorage.getItem("addon_active")
-
-if(!raw){
-alert("Belum ada addon")
-return
-}
-
-let addon=parseAddon(raw)
-
-panel.style.display="block"
-panel.innerHTML=`<b>${addon.name}</b><button onclick="closePanel()">X</button>`
-
-addon.blocks.forEach(b=>{
-panel.innerHTML+=`
-<button class="panelbtn" onclick="runBlock(\`${b.code}\`)">
-${b.title}
-</button>
-`
-})
-
-}
-
-/* RUN BLOCK */
-function runBlock(code){
-
-if(!selected){
-alert("Pilih element dulu")
-return
-}
-
-/* selected */
-code=code.replace("(selected)","selected")
-
-/* input */
-if(code.includes("(input)")){
-let val=prompt("Masukkan nilai:")
-code=code.replace("(input)",val)
-}
-
-/* select */
-if(code.includes("(select)")){
-let val=prompt("Masukkan pilihan:")
-code=code.replace("(select)",val)
-}
-
-try{
-eval(code)
-}catch(e){
-alert("Error addon")
-console.log(e)
-}
-
-}
-
-/* PANEL */
-function closePanel(){
-panel.style.display="none"
-}
-
-</script>
-
-</body>
-</html>
+<!DOCTYPE html>  <html>  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>KhawaBuild X FINAL</title>  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>  <style>  
+body{margin:0;font-family:Arial;background:#0e0e0e;color:white}  
+  
+/* TOPBAR */  
+#topbar{  
+display:flex;justify-content:space-between;  
+padding:10px;background:#121212;border-bottom:1px solid #333  
+}  
+  
+.group button{  
+background:#1f1f1f;color:white;border:none;  
+padding:8px 12px;margin:2px;border-radius:6px  
+}  
+  
+/* PREVIEW */  
+#preview{  
+background:white;color:black;  
+min-height:80vh;margin:10px;  
+border-radius:10px;padding:10px  
+}  
+  
+/* ELEMENT */  
+.element{  
+border:2px dashed transparent;  
+margin:8px;padding:10px;position:relative  
+}  
+  
+.element.selected{border-color:#00aaff}  
+  
+.deleteBtn{  
+position:absolute;top:-10px;right:-10px;  
+background:red;color:white;border:none;  
+border-radius:50%;width:20px;height:20px  
+}  
+  
+/* PANEL */  
+#panel{  
+position:fixed;bottom:0;width:100%;  
+background:#181818;display:none;  
+max-height:60vh;overflow:auto;padding:10px  
+}  
+  
+.panelbtn{  
+width:100%;padding:10px;margin:5px 0;  
+background:#333;color:white;border:none;border-radius:6px  
+}  
+  
+/* CONTAINER */  
+.container{  
+border:2px dashed #aaa;  
+min-height:80px;padding:10px  
+}  
+</style>  </head>  <body>  <div id="topbar">  
+<div class="group">  
+<button onclick="openAdd()">Add</button>  
+<button onclick="openStyle()">Style</button>  
+<button onclick="openBody()">Body</button>  
+<button onclick="openLoad()">Load</button>  
+<button onclick="saveCloud()">Save</button>  
+</div>  <div class="group">  
+<button onclick="openAddon()">Marketplace</button>  
+<button onclick="runAddon()">Run Addon</button>  
+<button onclick="manageAddon()">Addon Manager</button>  
+<button onclick="downloadHTML()">HTML</button>  
+<button onclick="downloadZIP()">ZIP</button>  
+<button onclick="logout()">Logout</button>  
+</div>  
+</div>  <div id="preview"></div>  
+<div id="panel"></div>  <script>  
+  
+/* USER */  
+let user = localStorage.getItem("user")  
+if(!user) location.href="login.html"  
+  
+/* FIREBASE */  
+const firebaseConfig={  
+apiKey:"AIzaSyCFBq7tASy3IeRb-GFaLFuvB5NcwydkHUM",  
+authDomain:"knockthem-25783.firebaseapp.com",  
+projectId:"knockthem-25783"  
+}  
+firebase.initializeApp(firebaseConfig)  
+const db=firebase.firestore()  
+  
+let preview=document.getElementById("preview")  
+let panel=document.getElementById("panel")  
+let selected=null  
+  
+/* SELECT */  
+function select(el){  
+if(selected)selected.classList.remove("selected")  
+selected=el  
+el.classList.add("selected")  
+}  
+  
+/* CREATE */  
+function create(html){  
+let target=preview  
+if(selected && selected.querySelector(".container")){  
+target=selected.querySelector(".container")  
+}  
+  
+let el=document.createElement("div")  
+el.className="element"  
+el.innerHTML=`<button class="deleteBtn">x</button>${html}`  
+  
+el.onclick=e=>{  
+e.stopPropagation()  
+select(el)  
+}  
+  
+el.querySelector(".deleteBtn").onclick=e=>{  
+e.stopPropagation()  
+el.remove()  
+}  
+  
+target.appendChild(el)  
+}  
+  
+/* MEDIA */  
+function toBase64(file,cb){  
+let r=new FileReader()  
+r.onload=()=>cb(r.result)  
+r.readAsDataURL(file)  
+}  
+  
+function addImage(){  
+let i=document.createElement("input")  
+i.type="file";i.accept="image/*"  
+i.onchange=e=>toBase64(e.target.files[0],url=>{  
+create(`<img src="${url}" style="max-width:100%">`)  
+})  
+i.click()  
+}  
+  
+function addVideo(){  
+let i=document.createElement("input")  
+i.type="file";i.accept="video/*"  
+i.onchange=e=>toBase64(e.target.files[0],url=>{  
+create(`<video src="${url}" controls></video>`)  
+})  
+i.click()  
+}  
+  
+function addAudio(){  
+let i=document.createElement("input")  
+i.type="file";i.accept="audio/*"  
+i.onchange=e=>toBase64(e.target.files[0],url=>{  
+create(`<audio src="${url}" controls></audio>`)  
+})  
+i.click()  
+}  
+  
+/* ADD */  
+function openAdd(){  
+panel.style.display="block"  
+panel.innerHTML=`  
+<b>Add Element</b><button onclick="closePanel()">X</button>  
+<button class="panelbtn" onclick="create('<h1 contenteditable>Header</h1>')">Header</button>  
+<button class="panelbtn" onclick="create('<p contenteditable>Text</p>')">Text</button>  
+<button class="panelbtn" onclick="create('<button>Button</button>')">Button</button>  
+<button class="panelbtn" onclick="create('<div class=container></div>')">Container</button>  
+<hr>  
+<button class="panelbtn" onclick="addImage()">Image</button>  
+<button class="panelbtn" onclick="addVideo()">Video</button>  
+<button class="panelbtn" onclick="addAudio()">Audio</button>  
+`  
+}  
+  
+/* STYLE */  
+function openStyle(){  
+if(!selected){alert("Pilih element");return}  
+panel.style.display="block"  
+panel.innerHTML=`  
+<b>Style</b><button onclick="closePanel()">X</button>  
+Color<input type=color oninput="selected.style.color=this.value">  
+Bg<input type=color oninput="selected.style.background=this.value">  
+Font<input type=range min=10 max=60 oninput="selected.style.fontSize=this.value+'px'">  
+Width<input type=range min=50 max=500 oninput="selected.style.width=this.value+'px'">  
+Height<input type=range min=50 max=500 oninput="selected.style.height=this.value+'px'">  
+`  
+}  
+  
+/* BODY */  
+function openBody(){  
+panel.style.display="block"  
+panel.innerHTML=`  
+<b>Body</b><button onclick="closePanel()">X</button>  
+Bg<input type=color oninput="preview.style.background=this.value">  
+Text<input type=color oninput="preview.style.color=this.value">  
+`  
+}  
+  
+/* CLOUD SAVE */  
+async function saveCloud(){  
+let ref=db.collection("projects").doc(user)  
+let doc=await ref.get()  
+let list=doc.exists?doc.data().list||[]:[]  
+if(list.length>=2){alert("Max 2 project");return}  
+list.push({html:preview.innerHTML})  
+await ref.set({list})  
+alert("Saved")  
+}  
+  
+/* LOAD */  
+async function openLoad(){  
+panel.style.display="block"  
+panel.innerHTML="<b>Load</b><button onclick='closePanel()'>X</button>"  
+let doc=await db.collection("projects").doc(user).get()  
+if(!doc.exists)return  
+let list=doc.data().list||[]  
+list.forEach((p,i)=>{  
+panel.innerHTML+=`<button class="panelbtn" onclick="loadProject(${i})">Project ${i+1}</button>`  
+})  
+window.cloudData=list  
+}  
+  
+function loadProject(i){  
+preview.innerHTML=window.cloudData[i].html  
+}  
+  
+/* ADDON LOAD */  
+function loadAddon(){  
+let id=localStorage.getItem("activeAddon")  
+if(!id)return  
+let code=localStorage.getItem("addon_"+id)  
+if(!code)return  
+try{eval(code)}catch(e){console.log(e)}  
+}  
+loadAddon()  
+  
+function runAddon(){  
+if(!window.customAddon){alert("Addon tidak aktif");return}  
+window.customAddon.open({  
+panel:panel,  
+selected:selected,  
+preview:preview,  
+create:create  
+})  
+}  
+  
+/* MANAGER */  
+function manageAddon(){  
+  
+panel.style.display="block"  
+panel.innerHTML="<b>Addon Manager</b><button onclick='closePanel()'>X</button>"  
+  
+for(let i in localStorage){  
+if(i.startsWith("addon_")){  
+let id=i.replace("addon_","")  
+panel.innerHTML+=`  
+<button class="panelbtn" onclick="deleteAddon('${id}')">Hapus ${id}</button>  
+`  
+}  
+}  
+  
+}  
+  
+function deleteAddon(id){  
+localStorage.removeItem("addon_"+id)  
+if(localStorage.getItem("activeAddon")==id){  
+localStorage.removeItem("activeAddon")  
+}  
+alert("Addon dihapus")  
+}  
+  
+/* MARKETPLACE */  
+function openAddon(){  
+location.href="addon.html"  
+}  
+  
+/* EXPORT */  
+function clean(){  
+let clone=preview.cloneNode(true)  
+clone.querySelectorAll(".deleteBtn").forEach(e=>e.remove())  
+clone.querySelectorAll(".element").forEach(e=>e.classList.remove("element","selected"))  
+return clone.innerHTML  
+}  
+  
+function downloadHTML(){  
+let blob=new Blob([`<html><body>${clean()}</body></html>`])  
+let a=document.createElement("a")  
+a.href=URL.createObjectURL(blob)  
+a.download="index.html"  
+a.click()  
+}  
+  
+async function downloadZIP(){  
+let zip=new JSZip()  
+zip.file("index.html",`<html><body>${clean()}</body></html>`)  
+let blob=await zip.generateAsync({type:"blob"})  
+let a=document.createElement("a")  
+a.href=URL.createObjectURL(blob)  
+a.download="web.zip"  
+a.click()  
+}  
+  
+/* PANEL */  
+function closePanel(){panel.style.display="none"}  
+  
+/* LOGOUT */  
+function logout(){  
+localStorage.removeItem("user")  
+location.href="login.html"  
+}  
+  
+</script>  </body>  
+</html>  
